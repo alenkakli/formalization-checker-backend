@@ -1,6 +1,6 @@
 const sqlite3 = require('sqlite3').verbose();
 
-const DB_PATH = './sqlite.db';
+const DB_PATH = './db/sqlite.db';
 
 const db = new sqlite3.Database(DB_PATH, (err) => {
   if (err) {
@@ -12,7 +12,7 @@ const db = new sqlite3.Database(DB_PATH, (err) => {
 
 const save = (data) => {
   db.run(
-    `INSERT INTO exercises (constants, predicates, functions, proposition) VALUES(?)`,
+    `INSERT INTO exercises(constants, predicates, functions, proposition) VALUES(?,?,?,?)`,
     [
       data.constants,
       data.predicates,
