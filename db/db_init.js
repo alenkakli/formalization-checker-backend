@@ -1,6 +1,5 @@
 const sqlite3 = require('sqlite3').verbose();
-
-const DB_PATH = './db/sqlite.db';
+const DB_PATH = require('./path');
 
 const db = new sqlite3.Database(DB_PATH, (err) => {
   if (err) {
@@ -15,8 +14,20 @@ db.serialize(() => {
       + "exercise_id INTEGER PRIMARY KEY AUTOINCREMENT,"
       + "constants TEXT,"
       + "predicates TEXT,"
-      + "functions TEXT,"
-      + "proposition TEXT"
+      + "functions TEXT"
+    + ")",
+    (err) => {
+      if (err) {
+        return console.error(err.message);
+      }
+    }
+  );
+  db.run(
+    "CREATE TABLE IF NOT EXISTS propositions ("
+      + "proposition_id INTEGER PRIMARY KEY AUTOINCREMENT,"
+      + "exercise_id INTEGER NOT NULL,"
+      + "proposition TEXT,"
+      + "FOREIGN KEY (exercise_id) REFERENCES exercises(exercise_id)"
     + ")",
     (err) => {
       if (err) {
@@ -26,9 +37,9 @@ db.serialize(() => {
   );
   db.run(
     "CREATE TABLE IF NOT EXISTS formalizations ("
-      + "exercise_id INTEGER NOT NULL,"
+      + "proposition_id INTEGER NOT NULL,"
       + "formalization TEXT,"
-      + "FOREIGN KEY (exercise_id) REFERENCES exercises(exercise_id)"
+      + "FOREIGN KEY (proposition_id) REFERENCES propositions(proposition_id)"
     + ")",
     (err) => {
       if (err) {
