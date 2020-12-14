@@ -9,8 +9,7 @@ const PORT = process.env.PORT || 5000;
 server.use(cors());
 server.use(express.json());
 
-server.use('/addExercise', require('./routes/addExercise'));
-
+server.use('/exercise', require('./routes/exercise'));
 
 server.listen(PORT, () => {
   console.log(`Server started listening on port ${PORT}`);

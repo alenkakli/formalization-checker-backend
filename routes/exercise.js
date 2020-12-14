@@ -1,7 +1,6 @@
 const express = require('express');
-const router = express.Router();
 
-const save = require('../db/db').save;
+const router = express.Router();
 
 router.post('/', (req, res) => {
   try {
