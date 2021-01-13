@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const { checkExercise } = require('../../helpers/helpers');
 const { saveExercise } = require('../../db/saveData');
 const {
   getAllExercises, getExerciseByID
@@ -7,16 +8,19 @@ const {
 
 router.post('/', async (req, res) => {
   try {
-    const {
-      constants, predicates, functions, propositions
-    } = req.body;
+    const exercise = req.body;
 
-    await saveExercise(constants, predicates, functions, propositions);
+    if (checkExercise(exercise)) {
+      await saveExercise(exercise);
+    } else {
+      res.status(400).end();
+      return;
+    }
 
-    res.status(200).json(req.body);
+    res.status(201).json(exercise);
   } catch (err) {
     console.error(err.stack);
-    res.status(500).json({ message: "Something went wrong" });
+    res.status(503).end();
   }
 });
 
@@ -24,21 +28,33 @@ router.get('/', async (req, res) => {
   try {
     const rows = await getAllExercises();
 
-    res.json(rows);
+    res.status(200).json(rows);
   } catch (err) {
     console.error(err.stack);
+    res.status(503).end();
   }
 });
 
 router.get('/:exercise_id', async (req, res) => {
   try {
     const { exercise_id } = req.params;
+    
+    const parsed_exercise_id = parseInt(exercise_id, 10);
+    if (isNaN(parsed_exercise_id)) {
+      res.status(400).end();
+      return;
+    }
 
     const rows = await getExerciseByID(exercise_id);
+    if (rows.length != 1) {
+      res.status(404).end();
+      return;
+    }
     
-    res.json(rows);
+    res.status(200).json(rows[0]);
   } catch (err) {
     console.error(err.stack);
+    res.status(503).end();
   }
 });
 

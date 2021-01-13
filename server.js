@@ -10,8 +10,6 @@ server.use(cors());
 server.use(express.json());
 
 server.use('/api/exercises', require('./routes/api/exercises'));
-server.use('/api/propositions', require('./routes/api/propositions'));
-server.use('/api/formalizations', require('./routes/api/formalizations'));
 
 server.listen(PORT, () => {
   console.log(`Server started listening on port ${PORT}`);

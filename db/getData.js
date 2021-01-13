@@ -12,38 +12,6 @@ const getAllExercises = async () => {
   }
 };
 
-const getAllPropositionsForExercise = async (exercise_id) => {
-  try {
-    const queryText =
-      "SELECT * FROM propositions WHERE exercise_id = $1";
-    const res = await pool.query(
-      queryText,
-      [ exercise_id ]
-    );
-    
-    return res.rows;
-  } catch (err) {
-    console.error(err.stack);
-    return null;
-  }
-};
-
-const getAllFormalizationsForProposition = async (proposition_id) => {
-  try {
-    const queryText =
-      "SELECT * FROM formalizations WHERE proposition_id = $1";
-    const res = await pool.query(
-      queryText,
-      [ proposition_id ]
-    );
-
-    return res.rows;
-  } catch (err) {
-    console.error(err.stack);
-    return null;
-  }
-};
-
 const getExerciseByID = async (exercise_id) => {
   try {
     const queryText =
@@ -60,10 +28,42 @@ const getExerciseByID = async (exercise_id) => {
   }
 };
 
+const getAllPropositionsForExercise = async (exercise_id) => {
+  try {
+    const queryText =
+      "SELECT * FROM propositions WHERE exercise_id = $1";
+    const res = await pool.query(
+      queryText,
+      [ exercise_id ]
+    );
+    
+    return res.rows;
+  } catch (err) {
+    console.error(err.stack);
+    return null;
+  }
+};
+
 const getPropositionByID = async (proposition_id) => {
   try {
     const queryText =
       "SELECT * FROM propositions WHERE proposition_id = $1";
+    const res = await pool.query(
+      queryText,
+      [ proposition_id ]
+    );
+
+    return res.rows;
+  } catch (err) {
+    console.error(err.stack);
+    return null;
+  }
+};
+
+const getAllFormalizationsForProposition = async (proposition_id) => {
+  try {
+    const queryText =
+      "SELECT * FROM formalizations WHERE proposition_id = $1";
     const res = await pool.query(
       queryText,
       [ proposition_id ]
@@ -94,9 +94,9 @@ const getFormalizationByID = async (formalization_id) => {
 
 module.exports = {
   getAllExercises,
-  getAllPropositionsForExercise,
-  getAllFormalizationsForProposition,
   getExerciseByID,
+  getAllPropositionsForExercise,
   getPropositionByID,
+  getAllFormalizationsForProposition,
   getFormalizationByID
 };
