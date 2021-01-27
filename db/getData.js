@@ -1,13 +1,12 @@
 const pool = require('./db');
 
-const getAllExercises = async () => {
+const getExercisePreviews = async () => {
   try {
-    const queryText = "SELECT * FROM exercises";
+    const queryText = 'SELECT exercise_id, title FROM exercises';
     const res = await pool.query(queryText);
 
     return res.rows;
   } catch (err) {
-    console.error(err.stack);
     return null;
   }
 };
@@ -15,15 +14,21 @@ const getAllExercises = async () => {
 const getExerciseByID = async (exercise_id) => {
   try {
     const queryText =
-      "SELECT * FROM exercises WHERE exercise_id = $1";
+      'SELECT * FROM exercises WHERE exercise_id = $1';
     const res = await pool.query(
       queryText,
       [ exercise_id ]
     );
 
-    return res.rows;
+    let propositions = await getAllPropositionsForExercise(exercise_id);
+    if (res.rows.length !== 1 || !propositions) {
+      return null;
+    }
+
+    let exercise = res.rows[0];
+    exercise.propositions = propositions;
+    return exercise;
   } catch (err) {
-    console.error(err.stack);
     return null;
   }
 };
@@ -31,31 +36,18 @@ const getExerciseByID = async (exercise_id) => {
 const getAllPropositionsForExercise = async (exercise_id) => {
   try {
     const queryText =
-      "SELECT * FROM propositions WHERE exercise_id = $1";
+      'SELECT proposition_id, proposition FROM propositions WHERE exercise_id = $1';
     const res = await pool.query(
       queryText,
       [ exercise_id ]
     );
     
-    return res.rows;
-  } catch (err) {
-    console.error(err.stack);
-    return null;
-  }
-};
-
-const getPropositionByID = async (proposition_id) => {
-  try {
-    const queryText =
-      "SELECT * FROM propositions WHERE proposition_id = $1";
-    const res = await pool.query(
-      queryText,
-      [ proposition_id ]
-    );
+    if (res.rows.length === 0) {
+      return null;
+    }
 
     return res.rows;
   } catch (err) {
-    console.error(err.stack);
     return null;
   }
 };
@@ -63,40 +55,25 @@ const getPropositionByID = async (proposition_id) => {
 const getAllFormalizationsForProposition = async (proposition_id) => {
   try {
     const queryText =
-      "SELECT * FROM formalizations WHERE proposition_id = $1";
+      'SELECT * FROM formalizations WHERE proposition_id = $1';
     const res = await pool.query(
       queryText,
       [ proposition_id ]
     );
 
+    if (res.rows.length === 0) {
+      return null;
+    }
+
     return res.rows;
   } catch (err) {
-    console.error(err.stack);
     return null;
   }
 };
 
-const getFormalizationByID = async (formalization_id) => {
-  try {
-    const queryText =
-      "SELECT * FROM formalizations WHERE formalization_id = $1";
-    const res = await pool.query(
-      queryText,
-      [ formalization_id ]
-    );
-
-    return res.rows;
-  } catch (err) {
-    console.error(err.stack);
-    return null;
-  }
-};
 
 module.exports = {
-  getAllExercises,
+  getExercisePreviews,
   getExerciseByID,
-  getAllPropositionsForExercise,
-  getPropositionByID,
-  getAllFormalizationsForProposition,
-  getFormalizationByID
+  getAllFormalizationsForProposition
 };

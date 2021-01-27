@@ -5,8 +5,8 @@ const saveExercise = async (
 ) => {
   try {
     const queryText =
-      "INSERT INTO exercises(title, constants, predicates, functions) "
-      + "VALUES($1, $2, $3, $4) RETURNING exercise_id";
+      'INSERT INTO exercises(title, constants, predicates, functions) '
+      + 'VALUES($1, $2, $3, $4) RETURNING exercise_id';
     const res = await pool.query(
       queryText,
       [ title, constants, predicates, functions ]
@@ -25,8 +25,8 @@ const saveExercise = async (
 const saveProposition = async (exerciseID, { proposition, formalizations }) => {
   try {
     const queryText =
-      "INSERT INTO propositions(proposition, exercise_id) "
-      + "VALUES($1, $2) RETURNING proposition_id";
+      'INSERT INTO propositions(proposition, exercise_id) '
+      + 'VALUES($1, $2) RETURNING proposition_id';
     const res = await pool.query(
       queryText,
       [ proposition, exerciseID ]
@@ -45,8 +45,8 @@ const saveProposition = async (exerciseID, { proposition, formalizations }) => {
 const saveFormalization = async (propositionID, formalization) => {
   try {
     const queryText =
-      "INSERT INTO formalizations(formalization, proposition_id) "
-      + "VALUES($1, $2)";
+      'INSERT INTO formalizations(formalization, proposition_id) '
+      + 'VALUES($1, $2)';
     await pool.query(
       queryText,
       [ formalization, propositionID ]
@@ -55,6 +55,7 @@ const saveFormalization = async (propositionID, formalization) => {
     console.error(err.stack);
   }
 };
+
 
 module.exports = {
   saveExercise
