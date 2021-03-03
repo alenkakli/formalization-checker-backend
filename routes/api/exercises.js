@@ -14,11 +14,12 @@ router.post('/', async (req, res) => {
     if (checkExercise(exercise)) {
       await saveExercise(exercise);
     } else {
-      res.status(400).send('');
+      res.status(400).send(exercise);
       return;
     }
 
     res.status(201).json(exercise);
+    
   } catch (err) {
     res.status(503).end();
   }
@@ -34,6 +35,7 @@ router.get('/', async (req, res) => {
     }
 
     res.status(200).json(previews);
+
   } catch (err) {
     res.status(503).end();
   }
@@ -56,6 +58,7 @@ router.get('/:exercise_id', async (req, res) => {
     }
     
     res.status(200).json(exercise);
+
   } catch (err) {
     res.status(503).end();
   }
@@ -63,11 +66,11 @@ router.get('/:exercise_id', async (req, res) => {
 
 router.get('/:exercise_id/:proposition_id', async (req, res) => {
   try {
-    const { exercise_id, proposition_id } = req.params;
+    let { exercise_id, proposition_id } = req.params;
     
-    const parsed_exercise_id = parseInt(exercise_id, 10);
-    const parsed_proposition_id = parseInt(proposition_id, 10);
-    if (isNaN(parsed_exercise_id) || isNaN(parsed_proposition_id)) {
+    exercise_id = parseInt(exercise_id, 10);
+    proposition_id = parseInt(proposition_id, 10);
+    if (isNaN(exercise_id) || isNaN(proposition_id)) {
       res.status(400).end();
       return;
     }
@@ -80,6 +83,7 @@ router.get('/:exercise_id/:proposition_id', async (req, res) => {
     }
     
     res.status(200).json({ message: "OK" });
+
   } catch (err) {
     res.status(503).end();
   }

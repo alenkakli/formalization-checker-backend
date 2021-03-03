@@ -1,15 +1,15 @@
 const pool = require('./db');
 
 const saveExercise = async (
-  { title, constants, predicates, functions, propositions }
+  { title, description, constants, predicates, functions, propositions }
 ) => {
   try {
     const queryText =
-      'INSERT INTO exercises(title, constants, predicates, functions) '
-      + 'VALUES($1, $2, $3, $4) RETURNING exercise_id';
+      'INSERT INTO exercises(title, description, constants, predicates, functions) '
+      + 'VALUES($1, $2, $3, $4, $5) RETURNING exercise_id';
     const res = await pool.query(
       queryText,
-      [ title, constants, predicates, functions ]
+      [ title, description, constants, predicates, functions ]
     );
 
     const exerciseID = res.rows[0].exercise_id;
@@ -17,6 +17,7 @@ const saveExercise = async (
     propositions.forEach(p => {
       saveProposition(exerciseID, p);
     });
+    
   } catch (err) {
     console.error(err.stack);
   }
@@ -37,6 +38,7 @@ const saveProposition = async (exerciseID, { proposition, formalizations }) => {
     formalizations.forEach(f => {
       saveFormalization(propositionID, f);
     });
+
   } catch (err) {
     console.error(err.stack);
   }
@@ -51,6 +53,7 @@ const saveFormalization = async (propositionID, formalization) => {
       queryText,
       [ formalization, propositionID ]
     );
+
   } catch (err) {
     console.error(err.stack);
   }

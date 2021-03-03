@@ -3,6 +3,7 @@ CREATE DATABASE formalization_exercises;
 CREATE TABLE exercises(
   exercise_id SERIAL PRIMARY KEY,
   title TEXT,
+  description TEXT,
   constants TEXT,
   predicates TEXT,
   functions TEXT

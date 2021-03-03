@@ -6,6 +6,7 @@ const getExercisePreviews = async () => {
     const res = await pool.query(queryText);
 
     return res.rows;
+    
   } catch (err) {
     return null;
   }
@@ -28,6 +29,7 @@ const getExerciseByID = async (exercise_id) => {
     let exercise = res.rows[0];
     exercise.propositions = propositions;
     return exercise;
+
   } catch (err) {
     return null;
   }
@@ -47,6 +49,7 @@ const getAllPropositionsForExercise = async (exercise_id) => {
     }
 
     return res.rows;
+
   } catch (err) {
     return null;
   }
@@ -66,6 +69,7 @@ const getAllFormalizationsForProposition = async (proposition_id) => {
     }
 
     return res.rows;
+
   } catch (err) {
     return null;
   }

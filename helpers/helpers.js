@@ -6,9 +6,9 @@ const {
 } = require('@fmfi-uk-1-ain-412/js-fol-parser');
 
 const checkExercise = (exercise) => {
-  if (!('title' in exercise) || !('constants' in exercise)
-      || !('predicates' in exercise) || !('functions' in exercise)
-      || !('propositions' in exercise)) {
+  if (!('title' in exercise) || !('description' in exercise)
+      || !('constants' in exercise) || !('predicates' in exercise)
+      || !('functions' in exercise) || !('propositions' in exercise)) {
     return false;
   }
 
