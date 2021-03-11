@@ -1,11 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const { checkExercise } = require('../../helpers/helpers');
+const { checkExercise } = require('../../helpers/checks');
 const { saveExercise } = require('../../db/saveData');
 const {
   getExercisePreviews, getExerciseByID,
   getAllFormalizationsForProposition
 } = require('../../db/getData');
+const evaluate = require('../../helpers/evaluate');
 
 router.post('/', async (req, res) => {
   try {
@@ -67,6 +68,7 @@ router.get('/:exercise_id', async (req, res) => {
 router.get('/:exercise_id/:proposition_id', async (req, res) => {
   try {
     let { exercise_id, proposition_id } = req.params;
+    let { solution } = req.body;
     
     exercise_id = parseInt(exercise_id, 10);
     proposition_id = parseInt(proposition_id, 10);
@@ -76,13 +78,21 @@ router.get('/:exercise_id/:proposition_id', async (req, res) => {
     }
 
     const formalizations = await getAllFormalizationsForProposition(proposition_id);
-
-    if (!formalizations) {
+    const exercise = await getExerciseByID(exercise_id);
+    if (!formalizations || !exercise) {
       res.status(404).end();
       return;
     }
+
+    let result = null;
+    try {
+      result = evaluate(solution, formalizations, exercise);
+    } catch (err) {
+      console.error(err.message);
+      res.status(400).end();
+    }
     
-    res.status(200).json({ message: "OK" });
+    res.status(200).json(result);
 
   } catch (err) {
     res.status(503).end();

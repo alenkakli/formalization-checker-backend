@@ -4,6 +4,29 @@ const {
   parseFunctions,
   parseFormulaWithPrecedence
 } = require('@fmfi-uk-1-ain-412/js-fol-parser');
+const {} = require('./formula_classes');
+
+const getLanguage = (exercise) => {
+  constants = parseConstants(exercise.constants);
+  predicates = parsePredicates(exercise.predicates);
+  functions = parseFunctions(exercise.functions);
+
+  if (containsDuplicates(constants)
+      || containsDuplicates(predicates.map(x => x.name))
+      || containsDuplicates(functions.map(x => x.name))) {
+    throw new Error();
+  }
+
+  constants = new Set(constants);
+  predicates = arrayToArityMap(predicates);
+  functions = arrayToArityMap(functions);
+
+  if (containsClashes(constants, predicates, functions)) {
+    throw new Error();
+  }
+
+  return { constants, predicates, functions };
+}
 
 const checkExercise = (exercise) => {
   if (!('title' in exercise) || !('description' in exercise)
@@ -12,32 +35,12 @@ const checkExercise = (exercise) => {
     return false;
   }
 
-  let constants = null;
-  let predicates = null;
-  let functions = null;
+  const language = null;
   try {
-    constants = parseConstants(exercise.constants);
-    predicates = parsePredicates(exercise.predicates);
-    functions = parseFunctions(exercise.functions);
+    language = getLanguage(exercise);
   } catch (err) {
     return false;
   }
-
-  if (containsDuplicates(constants)
-      || containsDuplicates(predicates.map(x => x.name))
-      || containsDuplicates(functions.map(x => x.name))) {
-    return false;
-  }
-
-  constants = new Set(constants);
-  predicates = arrayToArityMap(predicates);
-  functions = arrayToArityMap(functions);
-
-  if (containsClashes(constants, predicates, functions)) {
-    return false;
-  }
-
-  const language = { constants, predicates, functions };
 
   for (let p of exercise.propositions) {
     if (!checkProposition(p, language)) {
@@ -67,10 +70,30 @@ const checkFormalization = (
   formalization,
   { constants, predicates, functions }
 ) => {
+  const factories = {
+    variable: () => null,
+    constant: () => null,
+    functionApplication: (symbol, args, ee) => {
+      checkArity(symbol, args, functions, ee);
+      return null;
+    },
+    predicateAtom: (symbol, args, ee) => {
+      checkArity(symbol, args, predicates, ee);
+      return null;
+    },
+    equalityAtom: () => null,
+    negation: () => null,
+    conjunction: () => null,
+    disjunction: () => null,
+    implication: () => null,
+    equivalence: () => null,
+    existentialQuant: () => null,
+    universalQuant: () => null
+  };
+
   try {
     parseFormalization(
-      formalization, constants, predicates, functions,
-      parseFormulaWithPrecedence
+      formalization, constants, predicates, functions, factories
     );
   } catch (err) {
     return false;
@@ -131,7 +154,8 @@ function checkArity(symbol, args, arityMap, {expected}) {
   }
 }
 
-function parseFormalization(input, constants, predicates, functions, parser) {
+function parseFormalization(input, constants, predicates,
+                            functions, factories) {
   const nonLogicalSymbols = new Set([
     ...constants,
     ...predicates.keys(),
@@ -145,28 +169,12 @@ function parseFormalization(input, constants, predicates, functions, parser) {
     isVariable: (x) => !nonLogicalSymbols.has(x)
   };
 
-  const factories = {
-    variable: () => null,
-    constant: () => null,
-    functionApplication: (symbol, args, ee) => {
-      checkArity(symbol, args, functions, ee);
-    },
-    predicateAtom: (symbol, args, ee) => {
-      checkArity(symbol, args, predicates, ee);
-    },
-    equalityAtom: () => null,
-    negation: () => null,
-    conjunction: () => null,
-    disjunction: () => null,
-    implication: () => null,
-    equivalence: () => null,
-    existentialQuant: () => null,
-    universalQuant: () => null
-  };
-
-  parser(input, language, factories);
+  return parseFormulaWithPrecedence(input, language, factories);
 }
 
 module.exports = {
-  checkExercise
+  getLanguage,
+  checkExercise,
+  checkArity,
+  parseFormalization
 };
