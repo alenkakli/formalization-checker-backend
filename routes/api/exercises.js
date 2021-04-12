@@ -10,19 +10,20 @@ const evaluate = require('../../helpers/evaluate');
 
 router.post('/', async (req, res) => {
   try {
-    const exercise = req.body;
+    let exercise = req.body;
 
     if (checkExercise(exercise)) {
       await saveExercise(exercise);
     } else {
-      res.status(400).send(exercise);
+      res.sendStatus(400);
       return;
     }
 
     res.status(201).json(exercise);
     
   } catch (err) {
-    res.status(503).end();
+    console.error(err.message);
+    res.sendStatus(503);
   }
 });
 
@@ -31,14 +32,15 @@ router.get('/', async (req, res) => {
     const previews = await getExercisePreviews();
 
     if (!previews) {
-      res.status(404).end();
+      res.sendStatus(404);
       return;
     }
 
     res.status(200).json(previews);
 
   } catch (err) {
-    res.status(503).end();
+    console.error(err.message);
+    res.sendStatus(503);
   }
 });
 
@@ -48,20 +50,21 @@ router.get('/:exercise_id', async (req, res) => {
     
     const parsed_exercise_id = parseInt(exercise_id, 10);
     if (isNaN(parsed_exercise_id)) {
-      res.status(400).end();
+      res.sendStatus(404).end();
       return;
     }
 
     const exercise = await getExerciseByID(exercise_id);
     if (!exercise) {
-      res.status(404).end();
+      res.sendStatus(404);
       return;
     }
     
     res.status(200).json(exercise);
 
   } catch (err) {
-    res.status(503).end();
+    console.error(err.message);
+    res.sendStatus(503);
   }
 });
 
@@ -73,29 +76,28 @@ router.get('/:exercise_id/:proposition_id', async (req, res) => {
     exercise_id = parseInt(exercise_id, 10);
     proposition_id = parseInt(proposition_id, 10);
     if (isNaN(exercise_id) || isNaN(proposition_id)) {
-      res.status(400).end();
+      res.sendStatus(400);
       return;
     }
 
     const formalizations = await getAllFormalizationsForProposition(proposition_id);
     const exercise = await getExerciseByID(exercise_id);
     if (!formalizations || !exercise) {
-      res.status(404).end();
+      res.sendStatus(404);
       return;
     }
 
-    let result = null;
     try {
-      result = evaluate(solution, formalizations, exercise);
+      let evaluation = await evaluate(solution, formalizations, exercise);
+      console.log(evaluation);
+      res.status(200).json({ evaluation });
     } catch (err) {
       console.error(err.message);
-      res.status(400).end();
+      res.sendStatus(400);
     }
-    
-    res.status(200).json(result);
-
   } catch (err) {
-    res.status(503).end();
+    console.error(err.message);
+    res.sendStatus(503);
   }
 });
 

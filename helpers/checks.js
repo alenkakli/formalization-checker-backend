@@ -4,7 +4,6 @@ const {
   parseFunctions,
   parseFormulaWithPrecedence
 } = require('@fmfi-uk-1-ain-412/js-fol-parser');
-const {} = require('./formula_classes');
 
 const getLanguage = (exercise) => {
   constants = parseConstants(exercise.constants);
@@ -14,7 +13,7 @@ const getLanguage = (exercise) => {
   if (containsDuplicates(constants)
       || containsDuplicates(predicates.map(x => x.name))
       || containsDuplicates(functions.map(x => x.name))) {
-    throw new Error();
+    throw new Error("Language contains duplicate symbols.");
   }
 
   constants = new Set(constants);
@@ -22,7 +21,7 @@ const getLanguage = (exercise) => {
   functions = arrayToArityMap(functions);
 
   if (containsClashes(constants, predicates, functions)) {
-    throw new Error();
+    throw new Error("Language contains clashes between symbols.");
   }
 
   return { constants, predicates, functions };
@@ -35,10 +34,11 @@ const checkExercise = (exercise) => {
     return false;
   }
 
-  const language = null;
+  let language = null;
   try {
     language = getLanguage(exercise);
   } catch (err) {
+    console.error(err.message);
     return false;
   }
 
@@ -70,7 +70,7 @@ const checkFormalization = (
   formalization,
   { constants, predicates, functions }
 ) => {
-  const factories = {
+  let factories = {
     variable: () => null,
     constant: () => null,
     functionApplication: (symbol, args, ee) => {
@@ -96,6 +96,7 @@ const checkFormalization = (
       formalization, constants, predicates, functions, factories
     );
   } catch (err) {
+    console.error(err.message);
     return false;
   }
 
@@ -148,7 +149,7 @@ function arrayToArityMap(symbols) {
 }
 
 function checkArity(symbol, args, arityMap, {expected}) {
-  const a = arityMap.get(symbol);
+  let a = arityMap.get(symbol);
   if (args.length !== a) {
     expected(`${a} argument${(a === 1 ? '' : 's')} to ${symbol}`);
   }

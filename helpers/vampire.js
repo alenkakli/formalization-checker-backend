@@ -1,13 +1,14 @@
-const { execSync } = require('child_process');
+const { exec } = require('child_process');
 
 const pathToVampire = './vampire_rel_master_4999';
 
-module.exports = function evalWithVampire(axiom, conjecture, timeLimit = 10) {7
-  axiom = axiom.toVampire();
-  conjecture = conjecture.toVampire();
-  let input = `fof(a,axiom,${axiom}). fof(b,conjecture,${conjecture}).`;
-  return execSync(
-    `${pathToVampire} -sa fmb -t ${timeLimit}`,
-    { input }
-  ).toString();
-}
+module.exports = async function evalWithVampire(callback, axiom, conjecture, timeLimit = 10) {
+  let input = `fof(a,axiom,${axiom.toVampire()}). `
+            + `fof(b,conjecture,${conjecture.toVampire()}).`;
+  
+  let process = await exec(`${pathToVampire} -sa fmb -t ${timeLimit}`);
+  process.stdin.write(input);
+  process.stdin.end();
+
+  return '';
+};
