@@ -68,7 +68,7 @@ router.get('/:exercise_id', async (req, res) => {
   }
 });
 
-router.get('/:exercise_id/:proposition_id', async (req, res) => {
+router.post('/:exercise_id/:proposition_id', async (req, res) => {
   try {
     let { exercise_id, proposition_id } = req.params;
     let { solution } = req.body;
@@ -76,21 +76,21 @@ router.get('/:exercise_id/:proposition_id', async (req, res) => {
     exercise_id = parseInt(exercise_id, 10);
     proposition_id = parseInt(proposition_id, 10);
     if (isNaN(exercise_id) || isNaN(proposition_id)) {
+      console.error('URL parameters are not numbers.');
       res.sendStatus(400);
       return;
     }
 
     const formalizations = await getAllFormalizationsForProposition(proposition_id);
     const exercise = await getExerciseByID(exercise_id);
-    if (!formalizations || !exercise) {
+    if (!formalizations || !exercise || formalizations.length === 0) {
+      console.error('Missing exercise or formalizations. Cannot evaluate.');
       res.sendStatus(404);
       return;
     }
 
     try {
-      let evaluation = await evaluate(solution, formalizations, exercise);
-      console.log(evaluation);
-      res.status(200).json({ evaluation });
+      evaluate(solution, formalizations, exercise, res);
     } catch (err) {
       console.error(err.message);
       res.sendStatus(400);

@@ -10,30 +10,25 @@ const {
 const LanguageToVampire = require('./language');
 const evalWithVampire = require('./vampire');
 
-module.exports = async function evaluate(solution, formalizations, exercise) {
+module.exports = function evaluate(
+  solution, formalizations, exercise, res
+) {
+
   const { constants, predicates, functions } = getLanguage(exercise);
 
-  if (formalizations.length === 0) {
-    throw new Error('Exercise does not have any formalizations specified. Cannot evaluate.');
-  }
+  let language = new LanguageToVampire();
+  let factories = getFactoriesForLanguage(language);
 
-  let language1 = new LanguageToVampire();
-  let factories1 = getFactoriesForLanguage(language1);
-  let language2 = new LanguageToVampire();
-  let factories2 = getFactoriesForLanguage(language2);
+  solution = parseFormalization(
+    solution, constants, predicates, functions, factories
+  ).toVampire();
 
-  let solutionFormula = parseFormalization(
-    solution, constants, predicates, functions, factories1
-  );
-  let formalizationFormula = parseFormalization(
+  formalization = parseFormalization(
     formalizations[0].formalization,
-    constants, predicates, functions, factories2
-  );
+    constants, predicates, functions, factories
+  ).toVampire();
 
-  let evaluation = await evalWithVampire(
-    solutionFormula, formalizationFormula
-  );
-  return evaluation;
+  evalWithVampire(res, solution, formalization);
 }
 
 function getFactoriesForLanguage(language) {
