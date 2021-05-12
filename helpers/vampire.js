@@ -1,6 +1,6 @@
 const { execFile } = require('child_process');
+const { PATH_TO_VAMPIRE } = require('../config');
 
-const pathToVampire = './vampire_rel_master_4999';
 
 module.exports = function evalWithVampire(
   res, solution, formalization, timeLimit = 10
@@ -41,7 +41,7 @@ module.exports = function evalWithVampire(
         let input = toVampireInput(formalization, solution);
         let args = [ '-t', timeLimit ];
 
-        let child = execFile(`${pathToVampire}`, args, callback);
+        let child = execFile(`${PATH_TO_VAMPIRE}`, args, callback);
         child.stdin.write(input);
         child.stdin.end();
       } else {
@@ -55,7 +55,7 @@ module.exports = function evalWithVampire(
         let input = toVampireInput(formalization, solution);
         let args = [ '-t', timeLimit ];
 
-        let child = execFile(`${pathToVampire}`, args, callback);
+        let child = execFile(`${PATH_TO_VAMPIRE}`, args, callback);
         child.stdin.write(input);
         child.stdin.end();
       } else {
@@ -69,7 +69,7 @@ module.exports = function evalWithVampire(
         let input = toVampireInput(formalization, solution);
         let args = [ '-t', timeLimit ];
 
-        let child = execFile(`${pathToVampire}`, args, callback);
+        let child = execFile(`${PATH_TO_VAMPIRE}`, args, callback);
         child.stdin.write(input);
         child.stdin.end();
       } else {
@@ -82,7 +82,7 @@ module.exports = function evalWithVampire(
     }
   }
 
-  let process = execFile(`${pathToVampire}`, processArgs, callback);
+  let process = execFile(`${PATH_TO_VAMPIRE}`, processArgs, callback);
   process.stdin.write(processInput);
   process.stdin.end();
 };

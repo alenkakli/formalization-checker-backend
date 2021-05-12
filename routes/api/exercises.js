@@ -1,5 +1,8 @@
 const express = require('express');
 const router = express.Router();
+const {
+  ACCESS_TOKEN_SECRET, REFRESH_TOKEN_SECRET
+} = require('../../config');
 const { checkExercise } = require('../../helpers/checks');
 const { saveExercise } = require('../../db/saveData');
 const {
@@ -7,6 +10,7 @@ const {
   getAllFormalizationsForProposition
 } = require('../../db/getData');
 const evaluate = require('../../helpers/evaluate');
+
 
 router.post('/', async (req, res) => {
   try {
