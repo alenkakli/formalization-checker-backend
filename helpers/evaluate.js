@@ -9,11 +9,9 @@ const {
 } = require('./formula_classes');
 const LanguageToVampire = require('./language');
 const evalWithVampire = require('./vampire');
-
 module.exports = function evaluate(
-  solution, formalizations, exercise, res
+  solution, formalizations, exercise, res, saveSolutionWithResult
 ) {
-
   const { constants, predicates, functions } = getLanguage(exercise);
 
   let language = new LanguageToVampire();
@@ -28,7 +26,10 @@ module.exports = function evaluate(
     constants, predicates, functions, factories
   ).toVampire();
 
-  evalWithVampire(res, solution, formalization);
+
+  evalWithVampire(res, solution,  formalization, saveSolutionWithResult);
+
+
 }
 
 function getFactoriesForLanguage(language) {
