@@ -1,18 +1,16 @@
 const { execFile } = require('child_process');
 const { PATH_TO_VAMPIRE } = require('../config');
-
-
 module.exports = function evalWithVampire(
-  res, solution, formalization, timeLimit = 10
+  res, solution, formalization, saveSolutionWithResult, timeLimit = 10
 ) {
-
   let processInput = toVampireInput(solution, formalization);
   let processArgs = [ '-t', timeLimit ];
 
-  let status = {
+  let eval_status = {
     solutionToFormalization: '',
     formalizationToSolution: ''
   };
+
 
   const callback = (error, stdout, stderr) => {
     if (error) {
@@ -29,14 +27,14 @@ module.exports = function evalWithVampire(
     let match = stdout.match(/% Termination reason: ([a-z]+)/i);
     if (!match || match.length !== 2) {
       console.error('Unknown evaluation result');
-      res.sendStatus(400);
+      res.sendStatus(500).json(eval_status);
     }
 
     let result = match[1];
 
-    if (result == 'Refutation') {
-      if (status.solutionToFormalization == '') {
-        status.solutionToFormalization = 'OK';
+    if (result === 'Refutation') {
+      if (eval_status.solutionToFormalization === '') {
+        eval_status.solutionToFormalization = 'OK';
 
         let input = toVampireInput(formalization, solution);
         let args = [ '-t', timeLimit ];
@@ -45,12 +43,13 @@ module.exports = function evalWithVampire(
         child.stdin.write(input);
         child.stdin.end();
       } else {
-        status.formalizationToSolution = 'OK';
-        res.status(200).json(status);
+        eval_status.formalizationToSolution = 'OK';
+        res.status(200).json(eval_status);
+        saveSolutionWithResult(eval_status);
       }
-    } else if (result == 'Satisfiable') {
-      if (status.solutionToFormalization == '') {
-        status.solutionToFormalization = 'WA';
+    } else if (result === 'Satisfiable') {
+      if (eval_status.solutionToFormalization === '') {
+        eval_status.solutionToFormalization = 'WA';
 
         let input = toVampireInput(formalization, solution);
         let args = [ '-t', timeLimit ];
@@ -59,12 +58,13 @@ module.exports = function evalWithVampire(
         child.stdin.write(input);
         child.stdin.end();
       } else {
-        status.formalizationToSolution= 'WA';
-        res.status(200).json(status);
+        eval_status.formalizationToSolution= 'WA';
+        res.status(200).json(eval_status);
+        saveSolutionWithResult(eval_status);
       }
-    } else if (result == 'Time') {
-      if (status.solutionToFormalization == '') {
-        status.solutionToFormalization = 'TE';
+    } else if (result === 'Time') {
+      if (eval_status.solutionToFormalization === '') {
+        eval_status.solutionToFormalization = 'TE';
 
         let input = toVampireInput(formalization, solution);
         let args = [ '-t', timeLimit ];
@@ -73,13 +73,15 @@ module.exports = function evalWithVampire(
         child.stdin.write(input);
         child.stdin.end();
       } else {
-        status.formalizationToSolution = 'TE';
-        res.status(200).json(status);
+        eval_status.formalizationToSolution = 'TE';
+        res.status(200).json(eval_status);
+        saveSolutionWithResult(eval_status);
       }
     } else {
       console.error('Unknown evaluation result.');
-      res.sendStatus(400);
+      res.sendStatus(500).json(eval_status);
     }
+
   }
 
   let process = execFile(`${PATH_TO_VAMPIRE}`, processArgs, callback);
