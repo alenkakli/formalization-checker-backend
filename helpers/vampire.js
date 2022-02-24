@@ -1,10 +1,11 @@
 const { execFile } = require('child_process');
+const fs = require('fs')
 const { PATH_TO_VAMPIRE } = require('../config');
 module.exports = function evalWithVampire(
   res, solution, formalization, saveSolutionWithResult, timeLimit = 10
 ) {
   let processInput = toVampireInput(solution, formalization);
-  let processArgs = [ '-t', timeLimit ];
+  let processArgs = ['-t', timeLimit, '-sa', 'fmb' ];
 
   let eval_status = {
     solutionToFormalization: '',
@@ -29,6 +30,12 @@ module.exports = function evalWithVampire(
       console.error('Unknown evaluation result');
       res.sendStatus(500).json(eval_status);
     }
+    console.log(stdout);
+    if(stdout.match('Finite Model Found!')){
+      let struktura = stdout.slice(stdout.search('tff') - 1, stdout.length);
+      struktura = struktura.slice(0 , struktura.search('% SZS'));
+      console.log(struktura);
+    }
 
     let result = match[1];
 
@@ -37,7 +44,7 @@ module.exports = function evalWithVampire(
         eval_status.solutionToFormalization = 'OK';
 
         let input = toVampireInput(formalization, solution);
-        let args = [ '-t', timeLimit ];
+        let args = [ '-t', timeLimit, '-sa', 'fmb'  ];
 
         let child = execFile(`${PATH_TO_VAMPIRE}`, args, callback);
         child.stdin.write(input);
@@ -52,7 +59,7 @@ module.exports = function evalWithVampire(
         eval_status.solutionToFormalization = 'WA';
 
         let input = toVampireInput(formalization, solution);
-        let args = [ '-t', timeLimit ];
+        let args = [ '-t', timeLimit, '-sa', 'fmb' ];
 
         let child = execFile(`${PATH_TO_VAMPIRE}`, args, callback);
         child.stdin.write(input);
@@ -67,7 +74,7 @@ module.exports = function evalWithVampire(
         eval_status.solutionToFormalization = 'TE';
 
         let input = toVampireInput(formalization, solution);
-        let args = [ '-t', timeLimit ];
+        let args = [  '-t', timeLimit, '-sa', 'fmb' ];
 
         let child = execFile(`${PATH_TO_VAMPIRE}`, args, callback);
         child.stdin.write(input);
