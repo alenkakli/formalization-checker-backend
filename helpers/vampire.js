@@ -2,7 +2,7 @@ const util = require('util');
 const exec = util.promisify(require('child_process').exec);
 const fs = require('fs')
 const { PATH_TO_VAMPIRE } = require('../config');
-const  {getStructure}  = require('./parser');
+const  {getStructure}  = require('./parse');
 
 
 module.exports = function evalWithVampire(
