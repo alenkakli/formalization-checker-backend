@@ -1,105 +1,79 @@
 const util = require('util');
-const exec = util.promisify(require('child_process').exec);
 const fs = require('fs')
 const { PATH_TO_VAMPIRE } = require('../config');
 const  {getStructure}  = require('./parse');
+const { execFile } = require('child_process');
+
+const execFileWithInput = (file, args, input, callback) =>
+    new Promise((resolve, reject) => {
+        const child = execFile(file, args,
+            (error, stdout, stderr) =>
+                error ? reject(error) : resolve({stdout, stderr}));
+        child.stdin.write(input);
+        child.stdin.end();
+    });
 
 
-module.exports = function evalWithVampire(
-  res, solution, formalization, saveSolutionWithResult, timeLimit = 10
+module.exports = async function evalWithVampire(
+    res, solution, formalization, saveSolutionWithResult, timeLimit = 10
 ) {
-  let eval_status = {
-    solutionToFormalization: '',
-    formalizationToSolution: '',
-    domain: '',
-    predicates: ''
-  };
+    let eval_status = {
+        solutionToFormalization: '',
+        formalizationToSolution: '',
+        domainSolutionToFormalization: '',
+        predicatesSolutionToFormalization: '',
+        domainFormalizationToSolution: '',
+        predicatesFormalizationToSolution: ''
+    };
 
-  run(solution, formalization, timeLimit, false).then(
-      res1 => {
-        eval_status.solutionToFormalization = res1
-        run(formalization,solution, timeLimit, false).then(
-          res2 => {
-            eval_status.formalizationToSolution = res2
-            if(eval_status.formalizationToSolution === "OK" && eval_status.solutionToFormalization === "OK"){
-              res.status(200).json(eval_status);
-              saveSolutionWithResult(eval_status);
-            }
-            else{
-              run(formalization,solution, timeLimit, true).then(
-                  res3 => {
-                    console.log(eval_status);
-                    if(eval_status.domain !== ""){
-                      res.status(200).json(eval_status);
-                      saveSolutionWithResult(eval_status);
-                    }
-                    else{
-                      run(formalization,solution, timeLimit, true).then(
-                          res4 => {
-                            res.status(200).json(eval_status);
-                            saveSolutionWithResult(eval_status);
-                          }
-                      )
-                    }
-                  }
-              )
-            }
-          }
-        )
-      });
-
-
-  async function runVampireCommand(processInput, findStructure, timeLimit)  {
-    try {
-      let stdout;
-      let stderr;
-      await exec(generateCommand(processInput, PATH_TO_VAMPIRE, timeLimit, findStructure)).
-      then(c => {stdout = c.stdout;
-                stderr = c.stderr});
-      if(stderr){
-        console.error(stderr);
-        res.status(400);
-      }
-      return stdout;
-    } catch (e) {
-      console.error(e.message);
-      res.status(500); // should contain code (exit code) and signal (that caused the termination).
+    eval_status.solutionToFormalization = await vampire(solution, formalization, timeLimit);
+    eval_status.formalizationToSolution = await vampire(formalization, solution, timeLimit);
+    console.log(eval_status);
+    if (eval_status.formalizationToSolution === "OK" && eval_status.solutionToFormalization === "OK") {
+        res.status(200).json(eval_status);
+        saveSolutionWithResult(eval_status);
+    } else {
+        let vampireOutput = await vampireStructure(formalization, solution, timeLimit);
+        eval_status.domainFormalizationToSolution = vampireOutput.domain;
+        eval_status.predicatesFormalizationToSolution = vampireOutput.predicates;
+        vampireOutput = await vampireStructure(solution, formalization, timeLimit)
+        eval_status.domainSolutionToFormalization = vampireOutput.domain;
+        eval_status.predicatesSolutionToFormalization = vampireOutput.predicates;
+        res.status(200).json(eval_status);
+        saveSolutionWithResult(eval_status);
     }
-  }
-  async function run(formalization1, formalization2, timeLimit, findStructure) {
-    let processInput = toVampireInput(formalization1, formalization2);
-    let stdout = await runVampireCommand(processInput, findStructure, timeLimit);
+}
 
-    let result = checkResult(stdout);
+  async function vampire(formalization1, formalization2, timeLimit) {
+    let processInput = toVampireInput(formalization1, formalization2);
+    let { stdout, stderr} = await execFileWithInput(`${PATH_TO_VAMPIRE}`, [ '-t', timeLimit ], processInput, '', '' );
+    let result = checkVampireResult(stdout);
     if (result === 500) {
-      res.status(500).json(eval_status);
+      res.status(500);
     }
     result = result[1];
-    if(findStructure && stdout.includes("Finite Model Found!")){
-      let structure = stdout.slice(stdout.indexOf("tff"), stdout.length);
-      structure = structure.slice(0, structure.indexOf("% SZS"));
-      let pom = getStructure(structure);
-      eval_status.domain = pom.domain;
-      eval_status.predicates = pom.predicates;
-    }
     return setStatus(result);
   }
-
-
-};
-
-const toVampireInput = (lhs, rhs) => {
-  return `fof(a,axiom,${lhs}). fof(b,conjecture,${rhs}).`
-};
-
-const generateCommand = (processInput, pathToVampire, timeLimit, findStructure) => {
-  if(findStructure){
-    return `echo "${processInput}" | ${pathToVampire} -t ${timeLimit} -sa fmb`
+  async function vampireStructure(formalization1, formalization2, timeLimit) {
+      let processInput = toVampireInput(formalization1, formalization2);
+      let {stdout, stderr} = await execFileWithInput(`${PATH_TO_VAMPIRE}`, [ '-t', timeLimit, '-sa', 'fmb' ], processInput);
+      let result = checkVampireResult(stdout);
+      if (result === 500) {
+          res.status(500).json(eval_status);
+      }
+      result = result[1];
+      if (stdout.includes("Finite Model Found!")) {
+          let structure = stdout.slice(stdout.indexOf("tff"), stdout.length);
+          structure = structure.slice(0, structure.indexOf("% SZS"));
+          structure = getStructure(structure);
+          return {status: setStatus(result), domain: structure.domain, predicates: structure.predicates};
+      }
+      return {status: setStatus(result), domain: "", predicates: ""};
   }
-  return `echo "${processInput}" | ${pathToVampire} -t ${timeLimit}`
-};
 
-function checkResult(stdout){
+const toVampireInput = (lhs, rhs) => `fof(a,axiom,${lhs}). fof(b,conjecture,${rhs}).`;
+
+function checkVampireResult(stdout){
   let match = stdout.match(/% Termination reason: ([a-z]+)/i);
   if (!match || match.length !== 2) {
     console.error('Unknown evaluation result');
@@ -108,23 +82,19 @@ function checkResult(stdout){
   return match;
 }
 
-function setStatus(result){
-  if (result === 'Refutation') {
-      return "OK"
-  }
-  if (result === 'Satisfiable') {
-    return 'WA';
-  }
-  if (result === 'Time') {
-    return 'TE';
-  }
-  if (result === 'Memory limit') {
-       return 'ML';
-  }
-  else {
-    console.error('Unknown evaluation result.');
-  }
+function setStatus(result) {
+    if (result === 'Refutation') {
+        return "OK"
+    }
+    if (result === 'Satisfiable') {
+        return 'WA';
+    }
+    if (result === 'Time') {
+        return 'TE';
+    }
+    if (result === 'Memory limit') {
+        return 'ML';
+    } else {
+        console.error('Unknown evaluation result.');
+    }
 }
-
-
-
