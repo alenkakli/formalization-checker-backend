@@ -25,9 +25,7 @@ module.exports = function evaluate(
     formalizations[0].formalization,
     constants, predicates, functions, factories
   ).toVampire();
-
-
-  evalWithVampire(res, solution,  formalization, saveSolutionWithResult);
+  evalWithVampire(res, solution,  formalization, saveSolutionWithResult, language);
 
 
 }
