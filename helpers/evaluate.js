@@ -13,13 +13,13 @@ module.exports = function evaluate(
   solution, formalizations, exercise, res, saveSolutionWithResult
 ) {
   const { constants, predicates, functions } = getLanguage(exercise);
+
   let language = new LanguageToVampire();
   let factories = getFactoriesForLanguage(language);
 
   solution = parseFormalization(
     solution, constants, predicates, functions, factories
   ).toVampire();
-
   formalization = parseFormalization(
     formalizations[0].formalization,
     constants, predicates, functions, factories
@@ -56,10 +56,10 @@ function getFactoriesForLanguage(language) {
     implication: (lhs, rhs) => new Implication(lhs, rhs),
     equivalence: (lhs, rhs) => new Equivalence(lhs, rhs),
     existentialQuant: (variable, subf) => new ExistentialQuant(
-      variable, language.variableToVampire(variable), subf
+      variable, language.variableToVampire(variable), null, subf
     ),
     universalQuant: (variable, subf) => new UniversalQuant(
-      variable, language.variableToVampire(variable), subf
+      variable, language.variableToVampire(variable), null, subf
     )
   };
 }
