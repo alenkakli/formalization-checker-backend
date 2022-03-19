@@ -13,7 +13,6 @@ module.exports = function evaluate(
   solution, formalizations, exercise, res, saveSolutionWithResult
 ) {
   const { constants, predicates, functions } = getLanguage(exercise);
-
   let language = new LanguageToVampire();
   let factories = getFactoriesForLanguage(language);
 
@@ -25,7 +24,7 @@ module.exports = function evaluate(
     formalizations[0].formalization,
     constants, predicates, functions, factories
   ).toVampire();
-  evalWithVampire(res, solution,  formalization, saveSolutionWithResult, language);
+  evalWithVampire(res, solution,  formalization, saveSolutionWithResult, language, exercise);
 
 
 }
