@@ -8,6 +8,10 @@ class Variable {
   toVampire() {
     return this.vampireSymbol;
   }
+
+  getOriginalSymbol(){
+    return this.originalSymbol;
+  }
 }
 
 class Constant {
@@ -18,6 +22,16 @@ class Constant {
 
   toVampire() {
     return this.vampireSymbol;
+  }
+
+  getOriginalSymbol(){
+    if(this.originalSymbol !== undefined){
+      return this.originalSymbol;
+    }
+    return this.vampireSymbol;
+  }
+  getAll(){
+    return [this];
   }
 }
 
@@ -32,6 +46,18 @@ class FunctionApplication {
     const argsToString = this.args.map((x) => x.toVampire());
     return `${this.vampireSymbol}(${argsToString.join(',')})`;
   }
+
+  getSymbol(){
+    return this.originalSymbol;
+  }
+
+  getArgs(){
+    return this.args;
+  }
+
+  getAll() {
+    return [this];
+  }
 }
 
 class PredicateAtom {
@@ -45,6 +71,18 @@ class PredicateAtom {
     const argsToString = this.args.map((x) => x.toVampire());
     return `${this.vampireSymbol}(${argsToString.join(',')})`;
   }
+
+  getSymbol(){
+    return this.originalSymbol;
+  }
+
+  getArgs(){
+    return this.args;
+  }
+
+  getAll() {
+    return [this];
+  }
 }
 
 class EqualityAtom {
@@ -56,6 +94,18 @@ class EqualityAtom {
   toVampire() {
     return `(${this.lhs.toVampire()} = ${this.rhs.toVampire()})`;
   }
+  getAll(){
+    let zoz = []
+    let a = this.lhs.getAll();
+    for(let pom = 0; pom < a.length; pom++){
+      zoz.push(a[pom]);
+    }
+    a = this.rhs.getAll()
+    for(let pom = 0; pom < a.length; pom++){
+      zoz.push(a[pom]);
+    }
+    return zoz;
+  }
 }
 
 class Negation {
@@ -65,6 +115,10 @@ class Negation {
 
   toVampire() {
     return `~(${this.subf.toVampire()})`;
+  }
+
+  getAll() {
+    return [];
   }
 }
 
@@ -77,6 +131,19 @@ class Conjunction {
   toVampire() {
     return `(${this.lhs.toVampire()} & ${this.rhs.toVampire()})`;
   }
+
+  getAll(){
+    let zoz = []
+    let a = this.lhs.getAll();
+    for(let pom = 0; pom < a.length; pom++){
+      zoz.push(a[pom]);
+    }
+    a = this.rhs.getAll()
+    for(let pom = 0; pom < a.length; pom++){
+      zoz.push(a[pom]);
+    }
+      return zoz;
+  }
 }
 
 class Disjunction {
@@ -87,6 +154,18 @@ class Disjunction {
 
   toVampire() {
     return `(${this.lhs.toVampire()} | ${this.rhs.toVampire()})`;
+  }
+  getAll(){
+    let zoz = []
+    let a = this.lhs.getAll();
+    for(let pom = 0; pom < a.length; pom++){
+      zoz.push(a[pom]);
+    }
+    a = this.rhs.getAll()
+    for(let pom = 0; pom < a.length; pom++){
+      zoz.push(a[pom]);
+    }
+    return zoz;
   }
 }
 
@@ -113,10 +192,16 @@ class Equivalence {
 }
 
 class ExistentialQuant {
-  constructor(originalSymbol, vampireSymbol, subf) {
+  constructor(originalSymbol, vampireSymbol, type, subf) {
     this.originalSymbol = originalSymbol;
     this.vampireSymbol = vampireSymbol;
     this.subf = subf;
+    if(type === null){
+      this.type = "";
+    }
+    else{
+      this.type = type;
+    }
   }
 
   toVampire() {
@@ -125,14 +210,24 @@ class ExistentialQuant {
 }
 
 class UniversalQuant {
-  constructor(originalSymbol, vampireSymbol, subf) {
+  constructor(originalSymbol, vampireSymbol, type, subf) {
     this.originalSymbol = originalSymbol;
     this.vampireSymbol = vampireSymbol;
     this.subf = subf;
+    if(type === null){
+      this.type = "";
+    }
+    else{
+      this.type = type;
+    }
   }
 
   toVampire() {
     return `(! [${this.vampireSymbol}] : ${this.subf.toVampire()})`;
+  }
+
+  getType() {
+      return this.type;
   }
 }
 
