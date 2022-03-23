@@ -15,30 +15,29 @@ const execFileWithInput = (file, args, input, callback) =>
 
 
 module.exports = async function evalWithVampire(
-    res, solution, formalization, saveSolutionWithResult, language, timeLimit = 10
+    res, solution, formalization, saveSolutionWithResult, language, exercise, timeLimit = 10
 ) {
     let eval_status = {
         solutionToFormalization: '',
         formalizationToSolution: '',
         domainSolutionToFormalization: '',
-        predicatesSolutionToFormalization: '',
+        iSolutionToFormalization: '',
         domainFormalizationToSolution: '',
-        predicatesFormalizationToSolution: ''
+        iFormalizationToSolution: ''
     };
 
     eval_status.solutionToFormalization = await vampire(solution, formalization, timeLimit);
     eval_status.formalizationToSolution = await vampire(formalization, solution, timeLimit);
-    console.log(eval_status);
     if (eval_status.formalizationToSolution === "OK" && eval_status.solutionToFormalization === "OK") {
         res.status(200).json(eval_status);
         saveSolutionWithResult(eval_status);
     } else {
-        let vampireOutput = await vampireStructure(formalization, solution, timeLimit, language);
+        let vampireOutput = await vampireStructure(formalization, solution, timeLimit, language, exercise);
         eval_status.domainFormalizationToSolution = vampireOutput.domain;
-        eval_status.predicatesFormalizationToSolution = vampireOutput.predicates;
-        vampireOutput = await vampireStructure(solution, formalization, timeLimit, language)
+        eval_status.iFormalizationToSolution = vampireOutput.prvky !== undefined ? vampireOutput.prvky : 'Nepodarilo sa nájsť štruktúru, na vaše riešenie sa radšej opýtajte. :(\n' ;
+        vampireOutput = await vampireStructure(solution, formalization, timeLimit, language, exercise)
         eval_status.domainSolutionToFormalization = vampireOutput.domain;
-        eval_status.predicatesSolutionToFormalization = vampireOutput.predicates;
+        eval_status.iSolutionToFormalization = vampireOutput.prvky !== undefined ? vampireOutput.prvky : 'Nepodarilo sa nájsť štruktúru, na vaše riešenie sa radšej opýtajte. :(\n';
         res.status(200).json(eval_status);
         saveSolutionWithResult(eval_status);
     }
@@ -54,7 +53,7 @@ module.exports = async function evalWithVampire(
     result = result[1];
     return setStatus(result);
   }
-  async function vampireStructure(formalization1, formalization2, timeLimit, language) {
+  async function vampireStructure(formalization1, formalization2, timeLimit, language, exercise) {
       let processInput = toVampireInput(formalization1, formalization2);
       let {stdout, stderr} = await execFileWithInput(`${PATH_TO_VAMPIRE}`, [ '-t', timeLimit, '-sa', 'fmb' ], processInput);
       let result = checkVampireResult(stdout);
@@ -65,8 +64,8 @@ module.exports = async function evalWithVampire(
       if (stdout.includes("Finite Model Found!")) {
           let structure = stdout.slice(stdout.indexOf("tff"), stdout.length);
           structure = structure.slice(0, structure.indexOf("% SZS"));
-          structure = getStructure(structure, language);
-          return {status: setStatus(result), domain: structure.domain, predicates: structure.predicates};
+          structure = getStructure(structure, language, exercise);
+          return {status: setStatus(result), domain: structure.domain, prvky: structure.prvky};
       }
       return {status: setStatus(result), domain: "", predicates: ""};
   }
