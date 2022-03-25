@@ -5,6 +5,7 @@ const {
 } = require('../../config');
 const { checkExercise } = require('../../helpers/checks');
 const { saveExercise, saveSolution} = require('../../db/saveData');
+const { ADMIN_NAME, ADMIN_PASSWORD} = require('../../config');
 const {
   getExercisePreviews, getExerciseByID,
   getAllFormalizationsForProposition
@@ -117,5 +118,20 @@ router.post('/:exercise_id/:proposition_id', async (req, res) => {
   }
 });
 
+router.post('/logIn', async (req, res) => {
+  try {
+    let data = req.body;
+    if (data.username === ADMIN_NAME && data.password === ADMIN_PASSWORD) {
+      res.status(200).json(data);
+    } else {
+      console.error("Wrong user name or password")
+      res.sendStatus(400);
+    }
+
+  } catch (err) {
+    console.error(err.message);
+    res.sendStatus(503);
+  }
+});
 
 module.exports = router;
