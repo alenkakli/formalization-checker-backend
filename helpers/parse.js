@@ -164,12 +164,10 @@ function parseEqualityAtom(constant1, constant2, constants, poc){
 
 function fillFunction(functions, constants, fun, poc) {
     let was = []
-    console.log(functions[fun]);
     for (let value of functions[fun]) {
         was.push(value[0])
     }
     for (let key in constants) {
-        console.log(constants[key]);
         if (!(was.includes(constants[key]))){
             was.push(constants[key]);
             functions[fun].push([constants[key], chance.integer({min: 1, max: poc - 1})]);
@@ -179,12 +177,13 @@ function fillFunction(functions, constants, fun, poc) {
 }
 
 function getStringDomainAndPredicates(predicates, constants, functions, exercise){
-    let d = "D= {";
+    let d = "𝒟 = {";
+    let m = "𝓜 = (𝒟, 𝑖)";
     let i = "";
     let poc = 0;
     for (let [key, value] of Object.entries(constants)){
         if(getLanguage(exercise).constants.has(key)) {
-            i += "i(" + key + ") = " + value + "\n";
+            i += "𝑖(" + key + ") = " + value + "\n";
         }
         if( value <= poc){
             continue;
@@ -198,13 +197,13 @@ function getStringDomainAndPredicates(predicates, constants, functions, exercise
 
     i += stringForPredicateAndFunctions(predicates);
     i += stringForPredicateAndFunctions(functions);
-    return {domain: d, prvky: i};
+    return {domain: d, prvky: i, m: m};
 }
 
 function stringForPredicateAndFunctions(name){
     let p = "";
     for (let [key, value] of Object.entries(name)) {
-        p += "i(" + key + ") = " + "{";
+        p += "𝑖(" + key + ") = " + "{";
         if (value[value.length - 1] === undefined) {
             p += "}\n";
             continue;
@@ -213,7 +212,7 @@ function stringForPredicateAndFunctions(name){
             if (value[j] === undefined) {
                 continue;
             }
-            p += "(" + value[j] + ")";
+            p += "(" + value[j] + "), ";
         }
         p += "(" +  value[value.length - 1] + ")}\n";
     }
