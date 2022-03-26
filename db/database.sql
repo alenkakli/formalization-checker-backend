@@ -35,8 +35,8 @@ CREATE TABLE formalizations(
 );
 
 CREATE TABLE users(
-                      user_id INTEGER NOT NULL PRIMARY KEY, --z githubu
-                      git_token VARCHAR(256) NOT NULL -- tiez github
+                      id SERIAL NOT NULL PRIMARY KEY,
+                      email VARCHAR(256) NOT NULL -- from github
 );
 
 CREATE TABLE solutions(
