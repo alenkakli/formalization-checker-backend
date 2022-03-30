@@ -11,14 +11,11 @@ const constants = require("constants");
 function getStructure(structure, language, exercise){
     structure = structure.split(".");
     let constants = {}
-    let predicates = {};
-    let functions = {};
+    let symbols = {};
     let poc = 1;
 
     getLanguage(exercise).constants.forEach(key => constants[key] = poc);
     poc++;
-    getLanguage(exercise).predicates.forEach((key, value) => predicates[value] = []);
-    getLanguage(exercise).functions.forEach((key, value) => functions[value] = []);
 
     for(let i = 0; i < structure.length - 1; i++ ){
         if(structure[i] === "\n" ){
@@ -32,8 +29,14 @@ function getStructure(structure, language, exercise){
 
         if(parsed_formula.name.includes("predicate")){
             if(parsed_formula.formula.constructor.name === "Conjunction"){
-                poc = parsePredicate(parsed_formula, poc, predicates, constants).poc;
+                poc = parsePredicate(parsed_formula, poc, symbols, constants).poc;
             }
+            else{
+                let symbol = language.predicatesToOriginal.get(parsed_formula.name.substr(
+                    parsed_formula.name.indexOf("_") + 1 ,parsed_formula.name.length ));
+                symbols[symbol] = [];
+            }
+
         }
         if(parsed_formula.name.includes("function")){
             let functionAplications ;
@@ -43,7 +46,7 @@ function getStructure(structure, language, exercise){
             else if (parsed_formula.formula.constructor.name === "FunctionApplication"){
                 functionAplications = [parsed_formula.formula];
             }
-            poc =  parseFunction(parsed_formula, poc, functions, constants,functionAplications).poc;
+            poc =  parseFunction(parsed_formula, poc, symbols, constants,functionAplications).poc;
         }
         if(parsed_formula.name.includes("definition")){
             let constant ;
@@ -66,19 +69,32 @@ function getStructure(structure, language, exercise){
         if(parsed_formula.name.includes("finite_domain")){
             if(parsed_formula.formula.constructor.name === "UniversalQuant"){
                 if(parsed_formula.formula.type === "i"){
-                    poc = parseUniQuant(parsed_formula, poc, predicates, constants).poc;
+                    poc = parseUniQuant(parsed_formula, poc, symbols, constants).poc;
                 }
             }
         }
     }
-    for(let [key, value] of Object.entries(functions)){
-        poc = fillFunction(functions, constants, key, poc).poc;
+    getLanguage(exercise).predicates.forEach((key, value) => {
+        if(symbols[value] === undefined) {
+            symbols[value] = []
+        }
+    });
+    getLanguage(exercise).functions.forEach((key, value) => {
+        if(symbols[value] === undefined) {
+            symbols[value] = []
+        }
+    });
+    for(let [key, value] of Object.entries(symbols)){
+        if(getLanguage(exercise).functions.has(key)){
+            poc = fillFunction(symbols, constants, key, poc).poc;
+        }
     }
-    return getStringDomainAndPredicates(predicates, constants, functions, exercise);
+    return {constants: constants, symbols: symbols, language:getLanguage(exercise)};
 
 }
 
-function parseFunction(parsed_formula, poc, functions, constants, functionApplications){
+
+function parseFunction(parsed_formula, poc, symbols, constants, functionApplications){
     for(let i = 0; i < functionApplications.length; i++){
         let args = functionApplications[i].getArgs();
         let constant = [];
@@ -96,12 +112,18 @@ function parseFunction(parsed_formula, poc, functions, constants, functionApplic
                 }
             }
         }
-        functions[functionApplications[i].getSymbol()].push( constant);
+        if(symbols[functionApplications[i].getSymbol()] !== undefined){
+            symbols[functionApplications[i].getSymbol()].push( constant);
+        }
+        else{
+            symbols[functionApplications[i].getSymbol()] = [constant];
+        }
+
     }
-    return{functions: functions, constants: constants, poc: poc};
+    return{symbols: symbols, constants: constants, poc: poc};
 }
 
-function parsePredicate(parsed_formula, poc, predicates, constants){
+function parsePredicate(parsed_formula, poc, symbols, constants){
     let res = parsed_formula.formula.getAll();
     for(let i = 0; i < res.length; i++){
         let args = res[i].getArgs();
@@ -115,9 +137,14 @@ function parsePredicate(parsed_formula, poc, predicates, constants){
                 constant.push(constants[args[j].getOriginalSymbol()]);
             }
         }
-        predicates[res[i].getSymbol()].push(constant);
+        if(symbols[res[i].getSymbol()] !== undefined){
+            symbols[res[i].getSymbol()].push( constant);
+        }
+        else{
+            symbols[res[i].getSymbol()] = [constant];
+        }
     }
-    return{predicates: predicates, constants: constants, poc: poc};
+    return{symbols: symbols, constants: constants, poc: poc};
 }
 
 function parseUniQuant(parsed_formula, poc, predicates, constants){
@@ -162,63 +189,20 @@ function parseEqualityAtom(constant1, constant2, constants, poc){
     return{ constants: constants, poc: poc};
 }
 
-function fillFunction(functions, constants, fun, poc) {
+function fillFunction(symbols, constants, fun, poc) {
     let was = []
-    for (let value of functions[fun]) {
+    for (let value of symbols[fun]) {
         was.push(value[0])
     }
     for (let key in constants) {
         if (!(was.includes(constants[key]))){
             was.push(constants[key]);
-            functions[fun].push([constants[key], chance.integer({min: 1, max: poc - 1})]);
+            symbols[fun].push([constants[key], chance.integer({min: 1, max: poc - 1})]);
         }
     }
-    return {constants: constants, poc: poc, functions: functions};
+    return {constants: constants, poc: poc, symbols: symbols};
 }
 
-function getStringDomainAndPredicates(predicates, constants, functions, exercise){
-    let d = "𝒟 = {";
-    let m = "𝓜 = (𝒟, 𝑖)";
-    let i = "";
-    let poc = 0;
-    for (let [key, value] of Object.entries(constants)){
-        if(getLanguage(exercise).constants.has(key)) {
-            i += "𝑖(" + key + ") = " + value + "\n";
-        }
-        if( value <= poc){
-            continue;
-        }
-        d += value + ", ";
-        poc++;
-    }
-    i += "\n";
-    d = d.slice(0, d.length -2 );
-    d += "}\n";
-
-    i += stringForPredicateAndFunctions(predicates);
-    i += stringForPredicateAndFunctions(functions);
-    return {domain: d, prvky: i, m: m};
-}
-
-function stringForPredicateAndFunctions(name){
-    let p = "";
-    for (let [key, value] of Object.entries(name)) {
-        p += "𝑖(" + key + ") = " + "{";
-        if (value[value.length - 1] === undefined) {
-            p += "}\n";
-            continue;
-        }
-        for (let j = 0; j < value.length - 1; j++) {
-            if (value[j] === undefined) {
-                continue;
-            }
-            p += "(" + value[j] + "), ";
-        }
-        p += "(" +  value[value.length - 1] + ")}\n";
-    }
-
-    return p;
-}
 
 function factories(mapConstant, mapVariable, mapFunction, mapPredicate){
     return{
