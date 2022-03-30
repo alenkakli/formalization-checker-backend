@@ -4,13 +4,16 @@ const {
   ACCESS_TOKEN_SECRET, REFRESH_TOKEN_SECRET
 } = require('../../config');
 const { checkExercise } = require('../../helpers/checks');
-const { saveExercise, saveSolution} = require('../../db/saveData');
-const { ADMIN_NAME, ADMIN_PASSWORD} = require('../../config');
+const { saveExercise, saveSolution, saveUser} = require('../../db/saveData');
+const { getUserId} = require('../../db/getData');
+const { ADMIN_NAME, ADMIN_PASSWORD, CLIENT_ID, CLIENT_SECRET} = require('../../config');
+const request = require('request');
 const {
   getExercisePreviews, getExerciseByID,
   getAllFormalizationsForProposition
 } = require('../../db/getData');
 const evaluate = require('../../helpers/evaluate');
+const {json} = require("express");
 
 
 router.post('/', async (req, res) => {
@@ -41,7 +44,6 @@ router.get('/', async (req, res) => {
     }
 
     res.status(200).json(previews);
-
   } catch (err) {
     console.error(err.message);
     res.sendStatus(503);
@@ -74,7 +76,9 @@ router.get('/:exercise_id', async (req, res) => {
 router.post('/:exercise_id/:proposition_id', async (req, res) => {
   try {
     let { exercise_id, proposition_id } = req.params;
-    let { solution, user_id } = req.body;
+    let { solution, user } = req.body;
+    let user_id = await getUserId(user);
+    user_id = user_id[0].github_id;
     exercise_id = parseInt(exercise_id, 10);
     proposition_id = parseInt(proposition_id, 10);
     if (isNaN(exercise_id) || isNaN(proposition_id)) {
@@ -123,9 +127,11 @@ router.post('/logIn', async (req, res) => {
     let data = req.body;
     if (data.username === ADMIN_NAME && data.password === ADMIN_PASSWORD) {
       res.status(200).json(data);
-    } else {
+      return;
+    }
+    else {
       console.error("Wrong user name or password")
-      res.sendStatus(400);
+      res.status(400);
     }
 
   } catch (err) {
@@ -133,5 +139,42 @@ router.post('/logIn', async (req, res) => {
     res.sendStatus(503);
   }
 });
+
+
+
+
+router.post('/logIn/github/auth' , async (req, res) => {
+  try {
+    request.post({
+      url: "https://github.com/login/oauth/access_token/?client_id=" + CLIENT_ID +
+          "&client_secret=" + CLIENT_SECRET + "&code=" + req.body.code,
+      headers: {
+        'User-Agent': 'request'
+      }
+
+    }, function (error, response, body) {
+      request.get({
+        url: "https://api.github.com/user",
+        headers: {
+          'User-Agent': 'request',
+          'Authorization': 'token ' + body.split("&")[0].split("=")[1]
+        }
+      }, function (error, response, body) {
+        body = JSON.parse(body);
+        if(body.id !== undefined) {
+          saveUser(body.id, body.login);
+
+          res.status(200).json({"username": body.login, "password": "" });
+        }
+
+      });
+    });
+
+  } catch (err) {
+    console.error(err.message);
+    res.sendStatus(500);
+  }
+});
+
 
 module.exports = router;
