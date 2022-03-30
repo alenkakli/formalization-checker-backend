@@ -28,15 +28,15 @@ INSERT INTO propositions(proposition, exercise_id)
 VALUES('Nikto si nezapisuje výberové predmety.', 1);
 
 INSERT INTO formalizations(formalization, proposition_id)VALUES('∃x ∃y(student(x) ∧ chlapec(x) ∧ student(y) ∧ dievca(y) ∧ spoluziaci(x, y))', 1);
-INSERT INTO formalizations(formalization, proposition_id)VALUES('∀x (ucitel(x) ∧ profesor(x)) → ∃y (student(y) ∧ skolitel(x, y))', 2);
-INSERT INTO formalizations(formalization, proposition_id)VALUES('∀x ∀z ∃y(spoluziaci(x, y) ∧ spoluziaci(y, z)) → spoluziaci(x, z)', 3);
+INSERT INTO formalizations(formalization, proposition_id)VALUES('∀x ( (ucitel(x) ∧ profesor(x)) → ∃y (student(y) ∧ skolitel(x, y)) )', 2);
+INSERT INTO formalizations(formalization, proposition_id)VALUES('∀x ∀z ( ∃y(spoluziaci(x, y) ∧ spoluziaci(y, z)) → spoluziaci(x, z) )', 3);
 INSERT INTO formalizations(formalization, proposition_id)VALUES('∀x(student(x) → ¬ ∃y skolitel(x, y))', 4);
-INSERT INTO formalizations(formalization, proposition_id)VALUES('∀x ∀y (student(x) ∧ absolvoval(x, y) ∧ predmet(y)) → zapisany(x, y))', 5);
-INSERT INTO formalizations(formalization, proposition_id)VALUES('∀x student(x) ∧ ∃y(predmet(y) ∧ absolvoval(x, y)) → spokojny(x))', 6);
-INSERT INTO formalizations(formalization, proposition_id)VALUES('∀x student(x) → ∃y ∃z(¬ z ≐ y ∧ student(y) ∧ student(z) ∧ kamarat(x, y) ∧ kamarat(x, z) ) ∧ lepsi kamarat(x, y, z) ∧ ¬ z ≐ x ∧ ¬ y ≐ x))', 7);
-INSERT INTO formalizations(formalization, proposition_id)VALUES('∀x ∀y (student(x) ∧ skolitel(y, x)) → ∀z(skolitel(z, x) → z ≐ y))', 8);
-INSERT INTO formalizations(formalization, proposition_id)VALUES('∀x ∀y (student(x) ∧ skolitel(y, x)) → ¬ ∃z(skolitel(z, x) ∧ ¬ z ≐ y))', 8);
-INSERT INTO formalizations(formalization, proposition_id)VALUES('∀x (student(x) → ∀y ∀z((skolitel(y, x) ∧ skolitel(z, x)) → y ≐ z))', 8);
+INSERT INTO formalizations(formalization, proposition_id)VALUES('∀x ∀y ( (student(x) ∧ absolvoval(x, y) ∧ predmet(y)) → zapisany(x, y))', 5);
+INSERT INTO formalizations(formalization, proposition_id)VALUES('∀x ( ( student(x) ∧ ∃y(predmet(y) ∧ absolvoval(x, y)) ) → spokojny(x) )', 6);
+INSERT INTO formalizations(formalization, proposition_id)VALUES('∀x ( student(x) → ∃y ∃z(¬ z ≐ y ∧ student(y) ∧ student(z) ∧ kamarat(x, y) ∧ kamarat(x, z) ∧ lepsi kamarat(x, y, z) ∧ ¬ z ≐ x ∧ ¬ y ≐ x) )', 7);
+INSERT INTO formalizations(formalization, proposition_id)VALUES('∀x ∀y ( (student(x) ∧ skolitel(y, x)) → ∀z(skolitel(z, x) → z ≐ y) )', 8);
+INSERT INTO formalizations(formalization, proposition_id)VALUES('∀x ∀y ( (student(x) ∧ skolitel(y, x)) → ¬ ∃z(skolitel(z, x) ∧ ¬ z ≐ y) )', 8);
+INSERT INTO formalizations(formalization, proposition_id)VALUES('∀x ( student(x) → ∀y ∀z((skolitel(y, x) ∧ skolitel(z, x)) → y ≐ z)) )', 8);
 INSERT INTO formalizations(formalization, proposition_id)VALUES('∀x (student(x) ∧ dievca(x)) →(∃y student(y)∧dievca(y)∧spoluziaci(x,y)∧kamarat(x,y))) ∧ ¬ ∃z(lepsi kamarat(x, z, y) ∧ ¬ z ≐ y)))', 9);
 INSERT INTO formalizations(formalization, proposition_id)VALUES('¬ ∃x ∃y(predmet(y) ∧ vyberovy(y) ∧ zapisany(x, y))', 10);
 
