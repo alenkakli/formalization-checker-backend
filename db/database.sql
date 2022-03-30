@@ -35,9 +35,10 @@ CREATE TABLE formalizations(
 );
 
 CREATE TABLE users(
-                      id SERIAL NOT NULL PRIMARY KEY,
-                      email VARCHAR(256) NOT NULL -- from github
+                      github_id INTEGER NOT NULL PRIMARY KEY, --from github
+                      user_name VARCHAR(256) NOT NULL -- from github
 );
+SELECT * FROM solutions;
 
 CREATE TABLE solutions(
     solution_id SERIAL PRIMARY KEY,
@@ -49,7 +50,7 @@ CREATE TABLE solutions(
     REFERENCES propositions(proposition_id)
     ON DELETE CASCADE,
     FOREIGN KEY (user_id)
-    REFERENCES users(user_id)
+    REFERENCES users(github_id)
     ON DELETE CASCADE
 );
 
