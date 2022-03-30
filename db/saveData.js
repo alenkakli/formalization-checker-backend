@@ -74,14 +74,14 @@ const saveSolution = async (studentID, propositionID, studentSolution, correctSo
   }
 };
 
-const saveUser = async (user_id, gitToken ) => {
+const saveUser = async (github_id, user_name ) => {
   try {
     const queryText =
-        'INSERT INTO users(user_id, git_token) '
-        + 'VALUES($1, $2)';
+        'INSERT INTO users(github_id, user_name)'
+        + 'VALUES($1, $2) ON CONFLICT DO NOTHING;';
     await pool.query(
         queryText,
-        [ user_id, gitToken]
+        [ github_id, user_name]
     );
 
   } catch (err) {
