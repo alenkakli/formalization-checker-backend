@@ -15,4 +15,6 @@ module.exports = {
   SECRET_KEY: process.env.REACT_APP_SECRET_KEY,
   ADMIN_NAME: process.env.ADMIN_NAME,
   ADMIN_PASSWORD: process.env.ADMIN_PASSWORD,
+  CLIENT_ID: process.env.CLIENT_ID,
+  CLIENT_SECRET: process.env.CLIENT_SECRET,
 };
