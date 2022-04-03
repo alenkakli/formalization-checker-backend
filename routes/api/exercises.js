@@ -39,7 +39,6 @@ router.post('/',  async (req, res) => {
 
 router.get('/', async (req, res) => {
   try {
-    console.log(authenticateToken);
     if(!authenticateToken(req)) {
       res.sendStatus(403);
     }
