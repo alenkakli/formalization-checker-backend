@@ -45,7 +45,8 @@ module.exports = async function evalWithVampire(
         eval_status.symbolsFormalizationToSolution = vampireOutput.symbols !== undefined ? vampireOutput.symbols : '' ;
         eval_status.m1 =  vampireOutput.m !== '' ? "Štruktúra " + vampireOutput.m + structureFormalizationToSolution + ":"
                             : "Štruktúru" + vampireOutput.m  + structureFormalizationToSolution + ","  + notFound;
-        eval_status.languageContants = Array.from(vampireOutput.language.constants);
+        eval_status.languageContants = vampireOutput.language === undefined ?
+            [] : Array.from(vampireOutput.language.constants) ;
 
         vampireOutput = await vampireStructure(solution, formalization, timeLimit, language, exercise)
         eval_status.domainSolutionToFormalization = vampireOutput.constants !== undefined ? vampireOutput.constants : '';
