@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const {
-  ACCESS_TOKEN_SECRET, REFRESH_TOKEN_SECRET
+  ACCESS_TOKEN_SECRET, REFRESH_TOKEN_SECRET, TOKEN_SECRET
 } = require('../../config');
 const { checkExercise } = require('../../helpers/checks');
 const { saveExercise, saveSolution, saveUser} = require('../../db/saveData');
@@ -14,10 +14,13 @@ const {
 } = require('../../db/getData');
 const evaluate = require('../../helpers/evaluate');
 const {json} = require("express");
+const jwt = require('jsonwebtoken');
 
-
-router.post('/', async (req, res) => {
+router.post('/',  async (req, res) => {
   try {
+    if(!authenticateToken(req)) {
+      res.sendStatus(403);
+    }
     let exercise = req.body;
     if (checkExercise(exercise)) {
       await saveExercise(exercise);
@@ -36,6 +39,10 @@ router.post('/', async (req, res) => {
 
 router.get('/', async (req, res) => {
   try {
+    console.log(authenticateToken);
+    if(!authenticateToken(req)) {
+      res.sendStatus(403);
+    }
     const previews = await getExercisePreviews();
 
     if (!previews) {
@@ -52,6 +59,9 @@ router.get('/', async (req, res) => {
 
 router.get('/:exercise_id', async (req, res) => {
   try {
+    if(!authenticateToken(req)) {
+      res.sendStatus(403);
+    }
     const { exercise_id } = req.params;
     const parsed_exercise_id = parseInt(exercise_id, 10);
     if (isNaN(parsed_exercise_id)) {
@@ -75,6 +85,9 @@ router.get('/:exercise_id', async (req, res) => {
 
 router.post('/:exercise_id/:proposition_id', async (req, res) => {
   try {
+    if(!authenticateToken(req)) {
+      res.sendStatus(403);
+    }
     let { exercise_id, proposition_id } = req.params;
     let { solution, user } = req.body;
     let user_id = await getUserId(user);
@@ -122,12 +135,12 @@ router.post('/:exercise_id/:proposition_id', async (req, res) => {
   }
 });
 
-router.post('/logIn', async (req, res) => {
+router.post('/logIn',  async (req, res) => {
   try {
     let data = req.body;
-    if (data.username === ADMIN_NAME && data.password === ADMIN_PASSWORD) {
-      res.status(200).json(data);
-      return;
+     if (data.username === ADMIN_NAME && data.password === ADMIN_PASSWORD) {
+      const token = generateAccessToken({ username: data.username, isAdmin: true });
+      return res.status(200).json({"token": token});
     }
     else {
       console.error("Wrong user name or password")
@@ -163,8 +176,8 @@ router.post('/logIn/github/auth' , async (req, res) => {
         body = JSON.parse(body);
         if(body.id !== undefined) {
           saveUser(body.id, body.login);
-
-          res.status(200).json({"username": body.login, "password": "" });
+          const token = generateAccessToken({ username: body.login, isAdmin: false });
+          res.status(200).json({"token": token});
         }
 
       });
@@ -176,5 +189,21 @@ router.post('/logIn/github/auth' , async (req, res) => {
   }
 });
 
+function generateAccessToken(user) {
+  let oneDay = 24* 360 * 1000;
+  return jwt.sign(user, TOKEN_SECRET, { expiresIn: oneDay + 's' });
+}
+
+function authenticateToken(req) {
+    const token = req.headers.token;
+    if (!token) {
+      return false;
+    }
+    else {
+      return jwt.verify(token, TOKEN_SECRET, function(err, decoded) {
+        return !err;
+      });
+    }
+}
 
 module.exports = router;
