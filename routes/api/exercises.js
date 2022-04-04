@@ -18,8 +18,13 @@ const jwt = require('jsonwebtoken');
 
 router.post('/',  async (req, res) => {
   try {
-    if(!authenticateToken(req)) {
+    if(!authenticateToken(req.headers.token)) {
       res.sendStatus(403);
+      return;
+    }
+    if(!isAdmin(req.headers.token)){
+      res.sendStatus(403);
+      return;
     }
     let exercise = req.body;
     if (checkExercise(exercise)) {
@@ -39,8 +44,9 @@ router.post('/',  async (req, res) => {
 
 router.get('/', async (req, res) => {
   try {
-    if(!authenticateToken(req)) {
+    if(!authenticateToken(req.headers.token)) {
       res.sendStatus(403);
+      return;
     }
     const previews = await getExercisePreviews();
 
@@ -58,8 +64,9 @@ router.get('/', async (req, res) => {
 
 router.get('/:exercise_id', async (req, res) => {
   try {
-    if(!authenticateToken(req)) {
+    if(!authenticateToken(req.headers.token)) {
       res.sendStatus(403);
+      return;
     }
     const { exercise_id } = req.params;
     const parsed_exercise_id = parseInt(exercise_id, 10);
@@ -84,8 +91,9 @@ router.get('/:exercise_id', async (req, res) => {
 
 router.post('/:exercise_id/:proposition_id', async (req, res) => {
   try {
-    if(!authenticateToken(req)) {
+    if(!authenticateToken(req.headers.token)) {
       res.sendStatus(403);
+      return;
     }
     let { exercise_id, proposition_id } = req.params;
     let { solution, user } = req.body;
@@ -193,8 +201,7 @@ function generateAccessToken(user) {
   return jwt.sign(user, TOKEN_SECRET, { expiresIn: oneDay + 's' });
 }
 
-function authenticateToken(req) {
-    const token = req.headers.token;
+function authenticateToken(token) {
     if (!token) {
       return false;
     }
@@ -203,6 +210,11 @@ function authenticateToken(req) {
         return !err;
       });
     }
+}
+
+function isAdmin(token) {
+  token = JSON.parse(Buffer.from(action.payload.token.split(".")[1], "base64").toString());
+  return token.isAdmin;
 }
 
 module.exports = router;
