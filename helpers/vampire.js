@@ -80,7 +80,7 @@ module.exports = async function evalWithVampire(
           let structure = stdout.slice(stdout.indexOf("tff"), stdout.length);
           structure = structure.slice(0, structure.indexOf("% SZS"));
           structure = getStructure(structure, language, exercise);
-          return {status: setStatus(result), constants: structure.constants, symbols: structure.symbols, m:"𝓜 = (𝒟, 𝑖)", language: structure.language};
+          return {status: setStatus(result), constants: structure.constants, symbols: structure.symbols, m:"𝓜 = (𝘿, 𝑖)", language: structure.language};
       }
       return {status: setStatus(result), domain: "", predicates: "", m: ""};
   }
