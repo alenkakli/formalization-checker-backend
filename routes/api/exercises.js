@@ -5,7 +5,7 @@ const {
 } = require('../../config');
 const { checkExercise } = require('../../helpers/checks');
 const { saveExercise, saveSolution, saveUser} = require('../../db/saveData');
-const { getUserId} = require('../../db/getData');
+const { getUserId, getUser} = require('../../db/getData');
 const { ADMIN_NAME, ADMIN_PASSWORD, CLIENT_ID, CLIENT_SECRET} = require('../../config');
 const request = require('request');
 const {
@@ -179,11 +179,12 @@ router.post('/logIn/github/auth' , async (req, res) => {
           'User-Agent': 'request',
           'Authorization': 'token ' + body.split("&")[0].split("=")[1]
         }
-      }, function (error, response, body) {
+      }, async function (error, response, body) {
         body = JSON.parse(body);
-        if(body.id !== undefined) {
+        if (body.id !== undefined) {
           saveUser(body.id, body.login);
-          const token = generateAccessToken({ username: body.login, isAdmin: false });
+          let user = await getUser(body.login);
+          const token = generateAccessToken({username: user[0].user_name, isAdmin: user[0].is_admin});
           res.status(200).json({"token": token});
         }
 
