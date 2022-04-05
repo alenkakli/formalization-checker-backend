@@ -36,9 +36,9 @@ CREATE TABLE formalizations(
 
 CREATE TABLE users(
                       github_id INTEGER NOT NULL PRIMARY KEY, --from github
-                      user_name VARCHAR(256) NOT NULL -- from github
+                      user_name VARCHAR(256) NOT NULL, -- from github
+                      is_admin BOOLEAN NOT NULL
 );
-SELECT * FROM solutions;
 
 CREATE TABLE solutions(
     solution_id SERIAL PRIMARY KEY,

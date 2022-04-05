@@ -39,5 +39,3 @@ INSERT INTO formalizations(formalization, proposition_id)VALUES('∀x ∀y ( (st
 INSERT INTO formalizations(formalization, proposition_id)VALUES('∀x ( student(x) → ∀y ∀z((skolitel(y, x) ∧ skolitel(z, x)) → y ≐ z)) )', 8);
 INSERT INTO formalizations(formalization, proposition_id)VALUES('∀x (student(x) ∧ dievca(x)) →(∃y student(y)∧dievca(y)∧spoluziaci(x,y)∧kamarat(x,y))) ∧ ¬ ∃z(lepsi kamarat(x, z, y) ∧ ¬ z ≐ y)))', 9);
 INSERT INTO formalizations(formalization, proposition_id)VALUES('¬ ∃x ∃y(predmet(y) ∧ vyberovy(y) ∧ zapisany(x, y))', 10);
-
-INSERT INTO users(user_id, git_token)VALUES ( 1,'1tw78t7');
