@@ -77,8 +77,8 @@ const saveSolution = async (studentID, propositionID, studentSolution, correctSo
 const saveUser = async (github_id, user_name ) => {
   try {
     const queryText =
-        'INSERT INTO users(github_id, user_name)'
-        + 'VALUES($1, $2) ON CONFLICT DO NOTHING;';
+        'INSERT INTO users(github_id, user_name, is_admin)'
+        + 'VALUES($1, $2, FALSE) ON CONFLICT DO NOTHING;';
     await pool.query(
         queryText,
         [ github_id, user_name]
