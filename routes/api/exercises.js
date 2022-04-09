@@ -5,12 +5,13 @@ const {
 } = require('../../config');
 const { checkExercise } = require('../../helpers/checks');
 const { saveExercise, saveSolution, saveUser} = require('../../db/saveData');
-const { getUserId, getUser} = require('../../db/getData');
+const { getUserId, getUser, getUserSolutions} = require('../../db/getData');
 const { ADMIN_NAME, ADMIN_PASSWORD, CLIENT_ID, CLIENT_SECRET} = require('../../config');
 const request = require('request');
 const {
   getExercisePreviews, getExerciseByID,
-  getAllFormalizationsForProposition
+  getAllFormalizationsForProposition,
+  getUsersByPropositionId
 } = require('../../db/getData');
 const evaluate = require('../../helpers/evaluate');
 const {json} = require("express");
@@ -82,6 +83,56 @@ router.get('/:exercise_id', async (req, res) => {
     }
     
     res.status(200).json(exercise);
+
+  } catch (err) {
+    console.error(err.message);
+    res.sendStatus(503);
+  }
+});
+
+router.get('/progress/:proposition_id', async (req, res) => {
+  try {
+    if(!authenticateToken(req.headers.token)) {
+      res.sendStatus(403);
+      return;
+    }
+    const { proposition_id } = req.params;
+    const parsed_proposition_id = parseInt(proposition_id, 10);
+    if (isNaN(parsed_proposition_id)) {
+      res.sendStatus(404).end();
+      return;
+    }
+
+    const users = await getUsersByPropositionId(parsed_proposition_id);
+    res.status(200).json(users);
+
+  } catch (err) {
+    console.error(err.message);
+    res.sendStatus(503);
+  }
+});
+
+router.get('/progress/user/:user_id/:proposition_id', async (req, res) => {
+  try {
+    if(!authenticateToken(req.headers.token)) {
+      res.sendStatus(403);
+      return;
+    }
+    const { user_id } = req.params;
+    const parsed_user_id = parseInt(user_id, 10);
+    if (isNaN(parsed_user_id)) {
+      res.sendStatus(404).end();
+      return;
+    }
+    const { proposition_id } = req.params;
+    const parsed_proposition_id = parseInt(proposition_id, 10);
+    if (isNaN(parsed_proposition_id)) {
+      res.sendStatus(404).end();
+      return;
+    }
+
+    const solutions = await getUserSolutions(parsed_user_id, parsed_proposition_id);
+    res.status(200).json(solutions);
 
   } catch (err) {
     console.error(err.message);
@@ -187,7 +238,6 @@ router.post('/logIn/github/auth' , async (req, res) => {
           const token = generateAccessToken({username: user[0].user_name, isAdmin: user[0].is_admin});
           res.status(200).json({"token": token});
         }
-
       });
     });
 

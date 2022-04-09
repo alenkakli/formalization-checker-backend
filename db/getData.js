@@ -96,11 +96,45 @@ const getAllFormalizationsForProposition = async (proposition_id) => {
   }
 };
 
+const getUsersByPropositionId = async (proposition_id) => {
+  try {
+    const queryText =
+      'SELECT DISTINCT(user_name), github_id, proposition_id FROM users INNER JOIN (SELECT * FROM solutions WHERE proposition_id = $1) AS a ON github_id = a.user_id ';
+
+    const res = await pool.query(
+      queryText,
+      [ proposition_id ]
+    );
+    return res.rows;
+
+  } catch (err) {
+    return null;
+  }
+};
+
+const getUserSolutions = async (user_id, proposition_id) => {
+  try {
+    const queryText =
+      'SELECT s.solution, s.date, s.is_correct FROM solutions AS s WHERE s.proposition_id = $1 AND s.user_id = $2 ORDER BY s.date';
+
+    const res = await pool.query(
+      queryText,
+      [ proposition_id, user_id ]
+    );
+    return res.rows;
+
+  } catch (err) {
+    return null;
+  }
+};
+
 
 module.exports = {
   getExercisePreviews,
   getExerciseByID,
   getAllFormalizationsForProposition,
   getUserId,
-  getUser
+  getUser,
+  getUsersByPropositionId,
+  getUserSolutions
 };
