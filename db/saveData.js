@@ -62,8 +62,8 @@ const saveFormalization = async (propositionID, formalization) => {
 const saveSolution = async (studentID, propositionID, studentSolution, correctSolution) => {
   try {
     const queryText =
-        'INSERT INTO solutions(user_id, proposition_id, solution, is_correct) '
-        + 'VALUES($1, $2, $3, $4) returning solution_id';
+        'INSERT INTO solutions(user_id, proposition_id, solution, is_correct, date) '
+        + 'VALUES($1, $2, $3, $4, NOW()::timestamp) returning solution_id';
     await pool.query(
         queryText,
         [ studentID, propositionID, studentSolution, correctSolution ]

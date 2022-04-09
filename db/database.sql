@@ -46,6 +46,7 @@ CREATE TABLE solutions(
     solution TEXT,
     is_correct BOOLEAN,
     proposition_id INTEGER NOT NULL,
+    date timestamp NOT NULL,
     FOREIGN KEY (proposition_id)
     REFERENCES propositions(proposition_id)
     ON DELETE CASCADE,
