@@ -16,7 +16,7 @@ const execFileWithInput = (file, args, input, callback) =>
 
 
 module.exports = async function evalWithVampire(
-    res, solution, formalization, saveSolutionWithResult, language, exercise, timeLimit = 10
+    res, solution, helpSolution, formalization, saveSolutionWithResult, language, exercise, timeLimit = 10
 ) {
     let eval_status = {
         solutionToFormalization: '',
@@ -40,7 +40,7 @@ module.exports = async function evalWithVampire(
         let structureSolutionToFormalization = ', v ktorej je vaša formalizácia pravdivá, ale hľadaná správna formalizácia je nepravdivá'
         let structureFormalizationToSolution = ', v ktorej je vaša formalizácia nepravdivá, ale hľadaná správna formalizácia je pravdivá'
 
-        let vampireOutput = await vampireStructure(formalization, solution, timeLimit, language, exercise);
+        let vampireOutput = await vampireStructure(formalization, solution, helpSolution, timeLimit, language, exercise);
         eval_status.domainFormalizationToSolution = vampireOutput.constants !== undefined ? vampireOutput.constants : '';
         eval_status.symbolsFormalizationToSolution = vampireOutput.symbols !== undefined ? vampireOutput.symbols : '' ;
         eval_status.m1 =  vampireOutput.m !== '' ? "Štruktúra " + vampireOutput.m + structureFormalizationToSolution + ":"
@@ -48,7 +48,7 @@ module.exports = async function evalWithVampire(
         eval_status.languageContants = vampireOutput.language === undefined ?
             [] : Array.from(vampireOutput.language.constants) ;
 
-        vampireOutput = await vampireStructure(solution, formalization, timeLimit, language, exercise)
+        vampireOutput = await vampireStructure(solution, formalization, helpSolution, timeLimit, language, exercise)
         eval_status.domainSolutionToFormalization = vampireOutput.constants !== undefined ? vampireOutput.constants : '';
         eval_status.m2 = vampireOutput.m !== '' ? "Štruktúra " + vampireOutput.m + structureFormalizationToSolution + ":"
             : "Štruktúra"+ vampireOutput.m  + structureSolutionToFormalization + ","  + notFound ;
@@ -59,7 +59,7 @@ module.exports = async function evalWithVampire(
 }
 
   async function vampire(formalization1, formalization2, timeLimit) {
-    let processInput = toVampireInput(formalization1, formalization2);
+    let processInput = toVampireInput(formalization1, "", formalization2);
     let { stdout, stderr} = await execFileWithInput(`${PATH_TO_VAMPIRE}`, [ '-t', timeLimit ], processInput, '', '' );
     let result = checkVampireResult(stdout);
     if (result === 500) {
@@ -68,8 +68,8 @@ module.exports = async function evalWithVampire(
     result = result[1];
     return setStatus(result);
   }
-  async function vampireStructure(formalization1, formalization2, timeLimit, language, exercise) {
-      let processInput = toVampireInput(formalization1, formalization2);
+  async function vampireStructure(formalization1, formalization2, helpSolution, timeLimit, language, exercise) {
+      let processInput = toVampireInput(formalization1, helpSolution, formalization2);
       let {stdout, stderr} = await execFileWithInput(`${PATH_TO_VAMPIRE}`, [ '-t', timeLimit, '-sa', 'fmb' ], processInput);
       let result = checkVampireResult(stdout);
       if (result === 500 || stderr) {
@@ -85,7 +85,12 @@ module.exports = async function evalWithVampire(
       return {status: setStatus(result), domain: "", predicates: "", m: ""};
   }
 
-const toVampireInput = (lhs, rhs) => `fof(a,axiom,${lhs}). fof(b,conjecture,${rhs}).`;
+const toVampireInput = (lhs, lhs2, rhs) => {
+    if(lhs2 !== ""){
+        return `fof(a,axiom,${lhs}). fof(a,axiom,${lhs2}). fof(b,conjecture,${rhs}).`;
+    }
+    return `fof(a,axiom,${lhs}). fof(b,conjecture,${rhs}).`;
+}
 
 function checkVampireResult(stdout){
   let match = stdout.match(/% Termination reason: ([a-z]+)/i);

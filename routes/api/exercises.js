@@ -96,7 +96,7 @@ router.post('/:exercise_id/:proposition_id', async (req, res) => {
       return;
     }
     let { exercise_id, proposition_id } = req.params;
-    let { solution, user } = req.body;
+    let { solution, helpSolution, user } = req.body;
     let user_id = await getUserId(user);
     user_id = user_id[0].github_id;
     exercise_id = parseInt(exercise_id, 10);
@@ -130,7 +130,7 @@ router.post('/:exercise_id/:proposition_id', async (req, res) => {
           saveSolution(user_id, proposition_id, solution, false);
         }
       }
-      evaluate(solution, formalizations, exercise, res, saveSolutionWithResult );
+      evaluate(solution, helpSolution, formalizations, exercise, res, saveSolutionWithResult );
 
     } catch (err) {
       console.error(err.message);
@@ -184,6 +184,7 @@ router.post('/logIn/github/auth' , async (req, res) => {
         if (body.id !== undefined) {
           saveUser(body.id, body.login);
           let user = await getUser(body.login);
+          console.log(user);
           const token = generateAccessToken({username: user[0].user_name, isAdmin: user[0].is_admin});
           res.status(200).json({"token": token});
         }
@@ -198,7 +199,7 @@ router.post('/logIn/github/auth' , async (req, res) => {
 });
 
 function generateAccessToken(user) {
-  let oneDay = 24* 360 * 1000;
+  let oneDay = 24* 3600 * 30;
   return jwt.sign(user, TOKEN_SECRET, { expiresIn: oneDay + 's' });
 }
 

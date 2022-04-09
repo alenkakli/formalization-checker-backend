@@ -10,7 +10,7 @@ const {
 const LanguageToVampire = require('./language');
 const evalWithVampire = require('./vampire');
 module.exports = function evaluate(
-  solution, formalizations, exercise, res, saveSolutionWithResult
+  solution, helpSolution, formalizations, exercise, res, saveSolutionWithResult
 ) {
   const { constants, predicates, functions } = getLanguage(exercise);
 
@@ -20,11 +20,18 @@ module.exports = function evaluate(
   solution = parseFormalization(
     solution, constants, predicates, functions, factories
   ).toVampire();
+
+  if(helpSolution !== ""){
+    helpSolution = parseFormalization(
+        helpSolution, constants, predicates, functions, factories
+    ).toVampire();
+  }
+
   formalization = parseFormalization(
     formalizations[0].formalization,
     constants, predicates, functions, factories
   ).toVampire();
-  evalWithVampire(res, solution,  formalization, saveSolutionWithResult, language, exercise);
+  evalWithVampire(res, solution, helpSolution,  formalization, saveSolutionWithResult, language, exercise);
 
 
 }
