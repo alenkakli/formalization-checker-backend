@@ -17,13 +17,25 @@ const evaluate = require('../../helpers/evaluate');
 const {json} = require("express");
 const jwt = require('jsonwebtoken');
 
-router.post('/',  async (req, res) => {
+const authenticateJWT = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (authHeader) {
+    const token = authHeader.split(' ')[1];
+    jwt.verify(token, TOKEN_SECRET, (err, user) => {
+      if (err) {
+        return res.sendStatus(403);
+      }
+      req.user = user;
+      next();
+    });
+  } else {
+    res.sendStatus(401);
+  }
+};
+
+router.post('/', authenticateJWT, async (req, res) => {
   try {
-    if(!authenticateToken(req.headers.token)) {
-      res.sendStatus(403);
-      return;
-    }
-    if(!isAdmin(req.headers.token)){
+    if(!isAdmin(req.headers.authorization)){
       res.sendStatus(403);
       return;
     }
@@ -43,12 +55,9 @@ router.post('/',  async (req, res) => {
   }
 });
 
-router.get('/', async (req, res) => {
+router.get('/', authenticateJWT , async (req, res) => {
   try {
-    if(!authenticateToken(req.headers.token)) {
-      res.sendStatus(403);
-      return;
-    }
+
     const previews = await getExercisePreviews();
 
     if (!previews) {
@@ -63,12 +72,8 @@ router.get('/', async (req, res) => {
   }
 });
 
-router.get('/:exercise_id', async (req, res) => {
+router.get('/:exercise_id', authenticateJWT, async (req, res) => {
   try {
-    if(!authenticateToken(req.headers.token)) {
-      res.sendStatus(403);
-      return;
-    }
     const { exercise_id } = req.params;
     const parsed_exercise_id = parseInt(exercise_id, 10);
     if (isNaN(parsed_exercise_id)) {
@@ -90,9 +95,9 @@ router.get('/:exercise_id', async (req, res) => {
   }
 });
 
-router.get('/progress/:proposition_id', async (req, res) => {
+router.get('/progress/:proposition_id', authenticateJWT, async (req, res) => {
   try {
-    if(!authenticateToken(req.headers.token)) {
+    if(!isAdmin(req.headers.authorization)){
       res.sendStatus(403);
       return;
     }
@@ -112,9 +117,9 @@ router.get('/progress/:proposition_id', async (req, res) => {
   }
 });
 
-router.get('/progress/user/:user_id/:proposition_id', async (req, res) => {
+router.get('/progress/user/:user_id/:proposition_id', authenticateJWT, async (req, res) => {
   try {
-    if(!authenticateToken(req.headers.token)) {
+    if(!isAdmin(req.headers.authorization)){
       res.sendStatus(403);
       return;
     }
@@ -140,12 +145,8 @@ router.get('/progress/user/:user_id/:proposition_id', async (req, res) => {
   }
 });
 
-router.post('/:exercise_id/:proposition_id', async (req, res) => {
+router.post('/:exercise_id/:proposition_id', authenticateJWT, async (req, res) => {
   try {
-    if(!authenticateToken(req.headers.token)) {
-      res.sendStatus(403);
-      return;
-    }
     let { exercise_id, proposition_id } = req.params;
     let { solution, helpSolution, user } = req.body;
     let user_id = await getUserId(user);
@@ -252,20 +253,11 @@ function generateAccessToken(user) {
   return jwt.sign(user, TOKEN_SECRET, { expiresIn: oneDay + 's' });
 }
 
-function authenticateToken(token) {
-    if (!token) {
-      return false;
-    }
-    else {
-      return jwt.verify(token, TOKEN_SECRET, function(err, decoded) {
-        return !err;
-      });
-    }
-}
+
 
 function isAdmin(token) {
-  token = JSON.parse(Buffer.from(action.payload.token.split(".")[1], "base64").toString());
-  return token.isAdmin;
+  let t = JSON.parse(Buffer.from(token.split(" ")[1].split(".")[1], "base64").toString());
+  return t.isAdmin;
 }
 
 module.exports = router;

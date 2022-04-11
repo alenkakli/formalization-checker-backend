@@ -13,7 +13,8 @@ server.use(cors());
 server.use(express.json());
 
 server.use('/api/exercises', require('./routes/api/exercises'));
-//server().use(jwt({ secret: TOKEN_SECRET, algorithms: ['HS256']}).unless({path: ['/logIn', '/logIn/github/auth']}));
+
+server.use(jwt({ secret: TOKEN_SECRET, algorithms: ['HS256']}).unless({path: ['/logIn', '/logIn/github/auth']}));
 
 server.listen(PORT, () => {
   console.log(`Server started listening on port ${PORT}`);
