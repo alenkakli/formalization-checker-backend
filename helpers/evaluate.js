@@ -10,9 +10,9 @@ const {
 const LanguageToVampire = require('./language');
 const evalWithVampire = require('./vampire');
 module.exports = function evaluate(
-  solution, helpSolution, formalizations, exercise, res, saveSolutionWithResult
+  solution, formalizations, exercise, res, saveSolutionWithResult
 ) {
-  const { constants, predicates, functions } = getLanguage(exercise);
+  let { constants, predicates, functions, constraint  } = getLanguage(exercise);
 
   let language = new LanguageToVampire();
   let factories = getFactoriesForLanguage(language);
@@ -20,18 +20,24 @@ module.exports = function evaluate(
   solution = parseFormalization(
     solution, constants, predicates, functions, factories
   ).toVampire();
-
-  if(helpSolution !== ""){
-    helpSolution = parseFormalization(
-        helpSolution, constants, predicates, functions, factories
+  if(constraint !== ""){
+    constraint = parseFormalization(
+        constraint, constants, predicates, functions, factories
     ).toVampire();
   }
-
+  let constraintFromProp =  formalizations[0].constraints;
+  if(constraintFromProp !== ""){
+    constraintFromProp = parseFormalization(
+        constraintFromProp, constants, predicates, functions, factories
+    ).toVampire();
+  }
+//todo opytat sa ci neskusat vsetky a ak ano ako, for a ako vratit ktoru
   formalization = parseFormalization(
     formalizations[0].formalization,
     constants, predicates, functions, factories
   ).toVampire();
-  evalWithVampire(res, solution, helpSolution,  formalization, saveSolutionWithResult, language, exercise);
+
+  evalWithVampire(res, solution, constraint, constraintFromProp,  formalization, saveSolutionWithResult, language, exercise);
 
 
 }

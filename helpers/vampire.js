@@ -29,7 +29,6 @@ module.exports = async function evalWithVampire(
         symbolsFormalizationToSolution: '',
         languageContants: ''
     };
-
     eval_status.solutionToFormalization = await vampire(solution, formalization, timeLimit);
     eval_status.formalizationToSolution = await vampire(formalization, solution, timeLimit);
     if (eval_status.formalizationToSolution === "OK" && eval_status.solutionToFormalization === "OK") {

@@ -148,7 +148,7 @@ router.get('/progress/user/:user_id/:proposition_id', authenticateJWT, async (re
 router.post('/:exercise_id/:proposition_id', authenticateJWT, async (req, res) => {
   try {
     let { exercise_id, proposition_id } = req.params;
-    let { solution, helpSolution, user } = req.body;
+    let { solution, user } = req.body;
     let user_id = await getUserId(user);
     user_id = user_id[0].github_id;
     exercise_id = parseInt(exercise_id, 10);
@@ -182,7 +182,7 @@ router.post('/:exercise_id/:proposition_id', authenticateJWT, async (req, res) =
           saveSolution(user_id, proposition_id, solution, false);
         }
       }
-      evaluate(solution, helpSolution, formalizations, exercise, res, saveSolutionWithResult );
+      evaluate(solution, formalizations, exercise, res, saveSolutionWithResult );
 
     } catch (err) {
       console.error(err.message);
