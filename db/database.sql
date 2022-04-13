@@ -13,7 +13,8 @@ CREATE TABLE exercises(
   description TEXT,
   constants TEXT,
   predicates TEXT,
-  functions TEXT
+  functions TEXT,
+  constraints TEXT
 );
 
 CREATE TABLE propositions(
@@ -28,6 +29,7 @@ CREATE TABLE propositions(
 CREATE TABLE formalizations(
   formalization_id SERIAL PRIMARY KEY,
   formalization TEXT,
+  constraints TEXT,
   proposition_id INTEGER NOT NULL,
   FOREIGN KEY (proposition_id)
   REFERENCES propositions(proposition_id)

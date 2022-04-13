@@ -1,15 +1,15 @@
 const pool = require('./db');
 
 const saveExercise = async (
-  { title, description, constants, predicates, functions, propositions }
+  { title, description, constants, predicates, functions, propositions, constraint }
 ) => {
   try {
     const queryText =
-      'INSERT INTO exercises(title, description, constants, predicates, functions) '
-      + 'VALUES($1, $2, $3, $4, $5) RETURNING exercise_id';
+      'INSERT INTO exercises(title, description, constants, predicates, functions, constraints) '
+      + 'VALUES($1, $2, $3, $4, $5, $6) RETURNING exercise_id';
     const res = await pool.query(
       queryText,
-      [ title, description, constants, predicates, functions ]
+      [ title, description, constants, predicates, functions, constraint ]
     );
 
     const exerciseID = res.rows[0].exercise_id;
@@ -35,23 +35,23 @@ const saveProposition = async (exerciseID, { proposition, formalizations }) => {
 
     const propositionID = res.rows[0].proposition_id;
 
-    formalizations.forEach(f => {
-      saveFormalization(propositionID, f);
-    });
+    for(let i = 0; i < formalizations.length; i++){
+      saveFormalization(propositionID, formalizations[i], constraints[i]);
+    }
 
   } catch (err) {
     console.error(err.stack);
   }
 };
 
-const saveFormalization = async (propositionID, formalization) => {
+const saveFormalization = async (propositionID, formalization, constraint) => {
   try {
     const queryText =
-      'INSERT INTO formalizations(formalization, proposition_id) '
-      + 'VALUES($1, $2)';
+      'INSERT INTO formalizations(formalization, constraint, proposition_id) '
+      + 'VALUES($1, $2, $3)';
     await pool.query(
       queryText,
-      [ formalization, propositionID ]
+      [ formalization, constraint, propositionID ]
     );
 
   } catch (err) {
