@@ -6,7 +6,6 @@ const {
 const {Variable, Constant, FunctionApplication, PredicateAtom,
     EqualityAtom, Negation, Conjunction, Disjunction, Implication,
     Equivalence, ExistentialQuant, UniversalQuant} = require('./formula_classes');
-const constants = require("constants");
 
 function getStructure(structure, language, exercise){
     structure = structure.split(".");
