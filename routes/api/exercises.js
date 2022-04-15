@@ -11,7 +11,7 @@ const request = require('request');
 const {
   getExercisePreviews, getExerciseByID,
   getAllFormalizationsForProposition,
-  getUsersByPropositionId
+  getUsersByExerciseId
 } = require('../../db/getData');
 const evaluate = require('../../helpers/evaluate');
 const {json} = require("express");
@@ -95,20 +95,19 @@ router.get('/:exercise_id', authenticateJWT, async (req, res) => {
   }
 });
 
-router.get('/progress/:proposition_id', authenticateJWT, async (req, res) => {
+router.get('/progress/:exercise_id', authenticateJWT, async (req, res) => {
   try {
     if(!isAdmin(req.headers.authorization)){
       res.sendStatus(403);
       return;
     }
-    const { proposition_id } = req.params;
-    const parsed_proposition_id = parseInt(proposition_id, 10);
-    if (isNaN(parsed_proposition_id)) {
+    const { exercise_id } = req.params;
+    const parsed_exercise_id = parseInt(exercise_id, 10);
+    if (isNaN(parsed_exercise_id)) {
       res.sendStatus(404).end();
       return;
     }
-
-    const users = await getUsersByPropositionId(parsed_proposition_id);
+    const users = await getUsersByExerciseId(parsed_exercise_id);
     res.status(200).json(users);
 
   } catch (err) {
@@ -117,26 +116,22 @@ router.get('/progress/:proposition_id', authenticateJWT, async (req, res) => {
   }
 });
 
-router.get('/progress/user/:user_id/:proposition_id', authenticateJWT, async (req, res) => {
+router.get('/progress/user/:user_name/:exercise_id', authenticateJWT, async (req, res) => {
   try {
     if(!isAdmin(req.headers.authorization)){
       res.sendStatus(403);
       return;
     }
-    const { user_id } = req.params;
-    const parsed_user_id = parseInt(user_id, 10);
-    if (isNaN(parsed_user_id)) {
-      res.sendStatus(404).end();
-      return;
-    }
-    const { proposition_id } = req.params;
-    const parsed_proposition_id = parseInt(proposition_id, 10);
-    if (isNaN(parsed_proposition_id)) {
+    const { user_name } = req.params;
+    const { exercise_id } = req.params;
+    const parsed_exercise_id = parseInt(exercise_id, 10);
+    if (isNaN(parsed_exercise_id)) {
       res.sendStatus(404).end();
       return;
     }
 
-    const solutions = await getUserSolutions(parsed_user_id, parsed_proposition_id);
+    const solutions = await getUserSolutions(user_name, parsed_exercise_id);
+    console.log(solutions);
     res.status(200).json(solutions);
 
   } catch (err) {

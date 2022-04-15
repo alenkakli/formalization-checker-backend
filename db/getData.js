@@ -2,7 +2,7 @@ const pool = require('./db');
 
 const getExercisePreviews = async () => {
   try {
-    const queryText = 'SELECT exercise_id, title FROM exercises';
+    const queryText = 'SELECT e.exercise_id, e.title, count(DISTINCT(s.user_id)) as attempted FROM (exercises as e INNER JOIN propositions as p ON e.exercise_id = p.exercise_id ) INNER JOIN solutions as s ON s.proposition_id = p.proposition_id GROUP BY e.exercise_id, e.title;'
     const res = await pool.query(queryText);
 
     return res.rows;
@@ -96,14 +96,14 @@ const getAllFormalizationsForProposition = async (proposition_id) => {
   }
 };
 
-const getUsersByPropositionId = async (proposition_id) => {
+const getUsersByExerciseId = async (exercise_id) => {
   try {
     const queryText =
-      'SELECT DISTINCT(user_name), github_id, proposition_id FROM users INNER JOIN (SELECT * FROM solutions WHERE proposition_id = $1) AS a ON github_id = a.user_id ';
-
+        'SELECT DISTINCT(u.user_name), (SELECT COUNT(proposition_id) FROM solutions WHERE is_correct = true  ) as solved, COUNT(p.exercise_id) as attempts, p.exercise_id FROM solutions as s INNER JOIN propositions as p ON p.proposition_id = s.proposition_id INNER JOIN users as u ON u.github_id = s.user_id WHERE p.exercise_id = $1 GROUP BY u.user_name, p.exercise_id;'
+    ;
     const res = await pool.query(
       queryText,
-      [ proposition_id ]
+      [ exercise_id ]
     );
     return res.rows;
 
@@ -112,14 +112,14 @@ const getUsersByPropositionId = async (proposition_id) => {
   }
 };
 
-const getUserSolutions = async (user_id, proposition_id) => {
+const getUserSolutions = async (user_id, exercise_id) => {
   try {
     const queryText =
-      'SELECT s.solution, s.date, s.is_correct FROM solutions AS s WHERE s.proposition_id = $1 AND s.user_id = $2 ORDER BY s.date';
+      'SELECT s.solution, s.date, s.is_correct, p.proposition FROM solutions AS s INNER JOIN propositions as p ON p.proposition_id = s.proposition_id  INNER JOIN users as u ON s.user_id = u.github_id WHERE p.exercise_id = $1 AND u.user_name = $2 ORDER BY p.proposition, s.date DESC';
 
     const res = await pool.query(
       queryText,
-      [ proposition_id, user_id ]
+      [ exercise_id, user_id ]
     );
     return res.rows;
 
@@ -135,6 +135,6 @@ module.exports = {
   getAllFormalizationsForProposition,
   getUserId,
   getUser,
-  getUsersByPropositionId,
+  getUsersByExerciseId,
   getUserSolutions
 };
