@@ -11,6 +11,19 @@ const getExercisePreviews = async () => {
     return null;
   }
 };
+
+const getAllUsers = async () => {
+  try {
+    const queryText = 'SELECT user_name, is_admin FROM users;'
+    const res = await pool.query(queryText);
+
+    return res.rows;
+
+  } catch (err) {
+    return null;
+  }
+};
+
 const getUserId = async (user_login) => {
   try {
     const queryText = 'SELECT github_id FROM users WHERE user_name=$1;';
@@ -136,5 +149,6 @@ module.exports = {
   getUserId,
   getUser,
   getUsersByExerciseId,
-  getUserSolutions
+  getUserSolutions,
+  getAllUsers
 };

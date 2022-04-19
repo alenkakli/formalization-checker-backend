@@ -4,8 +4,8 @@ const {
   ACCESS_TOKEN_SECRET, REFRESH_TOKEN_SECRET, TOKEN_SECRET
 } = require('../../config');
 const { checkExercise } = require('../../helpers/checks');
-const { saveExercise, saveSolution, saveUser} = require('../../db/saveData');
-const { getUserId, getUser, getUserSolutions} = require('../../db/getData');
+const { saveExercise, saveSolution, saveUser, updateAdmins} = require('../../db/saveData');
+const { getUserId, getUser, getUserSolutions, getAllUsers} = require('../../db/getData');
 const { ADMIN_NAME, ADMIN_PASSWORD, CLIENT_ID, CLIENT_SECRET} = require('../../config');
 const request = require('request');
 const {
@@ -72,6 +72,38 @@ router.get('/', authenticateJWT , async (req, res) => {
   }
 });
 
+router.get('/allUsers', authenticateJWT , async (req, res) => {
+  try {
+    const users = await getAllUsers();
+    if (!users) {
+      res.sendStatus(404);
+      return;
+    }
+
+    res.status(200).json(users);
+  } catch (err) {
+    console.error(err.message);
+    res.sendStatus(503);
+  }
+});
+
+router.post('/allUsers', authenticateJWT , async (req, res) => {
+  try {
+    const users = req.body;
+    if (!users) {
+      res.sendStatus(404);
+      return;
+    }
+    for(let [key, value] of Object.entries(users)){
+      await updateAdmins(key, value);
+    }
+    res.status(200).json(users);
+  } catch (err) {
+    console.error(err.message);
+    res.sendStatus(503);
+  }
+});
+
 router.get('/:exercise_id', authenticateJWT, async (req, res) => {
   try {
     const { exercise_id } = req.params;
@@ -131,7 +163,6 @@ router.get('/progress/user/:user_name/:exercise_id', authenticateJWT, async (req
     }
 
     const solutions = await getUserSolutions(user_name, parsed_exercise_id);
-    console.log(solutions);
     res.status(200).json(solutions);
 
   } catch (err) {

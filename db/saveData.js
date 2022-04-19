@@ -89,9 +89,25 @@ const saveUser = async (github_id, user_name ) => {
   }
 };
 
+const updateAdmins = async (name, is_admin ) => {
+  try {
+    const queryText =
+        'UPDATE users SET  is_admin = $2'
+        + 'WHERE  user_name = $1';
+    await pool.query(
+        queryText,
+        [ name, is_admin]
+    );
+
+  } catch (err) {
+    console.error(err.stack);
+  }
+};
+
 
 module.exports = {
   saveExercise,
   saveSolution,
-  saveUser
+  saveUser,
+  updateAdmins
 };
