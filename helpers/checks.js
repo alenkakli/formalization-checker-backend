@@ -9,6 +9,7 @@ const getLanguage = (exercise) => {
   constants = parseConstants(exercise.constants);
   predicates = parsePredicates(exercise.predicates);
   functions = parseFunctions(exercise.functions);
+  constraint = exercise.constraints;
 
   if (containsDuplicates(constants)
       || containsDuplicates(predicates.map(x => x.name))
@@ -24,13 +25,14 @@ const getLanguage = (exercise) => {
     throw new Error("Language contains clashes between symbols.");
   }
 
-  return { constants, predicates, functions };
+  return { constants, predicates, functions, constraint };
 }
 
 const checkExercise = (exercise) => {
   if (!('title' in exercise) || !('description' in exercise)
       || !('constants' in exercise) || !('predicates' in exercise)
-      || !('functions' in exercise) || !('propositions' in exercise)) {
+      || !('functions' in exercise) || !('propositions' in exercise)
+      || !('constraint' in exercise)) {
     return false;
   }
 

@@ -13,7 +13,8 @@ CREATE TABLE exercises(
   description TEXT,
   constants TEXT,
   predicates TEXT,
-  functions TEXT
+  functions TEXT,
+  constraints TEXT
 );
 
 CREATE TABLE propositions(
@@ -28,6 +29,7 @@ CREATE TABLE propositions(
 CREATE TABLE formalizations(
   formalization_id SERIAL PRIMARY KEY,
   formalization TEXT,
+  constraints TEXT,
   proposition_id INTEGER NOT NULL,
   FOREIGN KEY (proposition_id)
   REFERENCES propositions(proposition_id)
@@ -35,8 +37,9 @@ CREATE TABLE formalizations(
 );
 
 CREATE TABLE users(
-                      user_id INTEGER NOT NULL PRIMARY KEY, --z githubu
-                      git_token VARCHAR(256) NOT NULL -- tiez github
+                      github_id INTEGER NOT NULL PRIMARY KEY, --from github
+                      user_name VARCHAR(256) NOT NULL, -- from github
+                      is_admin BOOLEAN NOT NULL
 );
 
 CREATE TABLE solutions(
@@ -45,11 +48,12 @@ CREATE TABLE solutions(
     solution TEXT,
     is_correct BOOLEAN,
     proposition_id INTEGER NOT NULL,
+    date timestamp NOT NULL,
     FOREIGN KEY (proposition_id)
     REFERENCES propositions(proposition_id)
     ON DELETE CASCADE,
     FOREIGN KEY (user_id)
-    REFERENCES users(user_id)
+    REFERENCES users(github_id)
     ON DELETE CASCADE
 );
 

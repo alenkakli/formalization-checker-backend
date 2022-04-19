@@ -12,7 +12,7 @@ const evalWithVampire = require('./vampire');
 module.exports = function evaluate(
   solution, formalizations, exercise, res, saveSolutionWithResult
 ) {
-  const { constants, predicates, functions } = getLanguage(exercise);
+  let { constants, predicates, functions, constraint  } = getLanguage(exercise);
 
   let language = new LanguageToVampire();
   let factories = getFactoriesForLanguage(language);
@@ -20,14 +20,24 @@ module.exports = function evaluate(
   solution = parseFormalization(
     solution, constants, predicates, functions, factories
   ).toVampire();
-
+  if(constraint !== ""){
+    constraint = parseFormalization(
+        constraint, constants, predicates, functions, factories
+    ).toVampire();
+  }
+  let constraintFromProp =  formalizations[0].constraints;
+  if(constraintFromProp !== ""){
+    constraintFromProp = parseFormalization(
+        constraintFromProp, constants, predicates, functions, factories
+    ).toVampire();
+  }
+//todo opytat sa ci neskusat vsetky a ak ano ako, for a ako vratit ktoru
   formalization = parseFormalization(
     formalizations[0].formalization,
     constants, predicates, functions, factories
   ).toVampire();
 
-
-  evalWithVampire(res, solution,  formalization, saveSolutionWithResult);
+  evalWithVampire(res, solution, constraint, constraintFromProp,  formalization, saveSolutionWithResult, language, exercise);
 
 
 }
@@ -59,10 +69,10 @@ function getFactoriesForLanguage(language) {
     implication: (lhs, rhs) => new Implication(lhs, rhs),
     equivalence: (lhs, rhs) => new Equivalence(lhs, rhs),
     existentialQuant: (variable, subf) => new ExistentialQuant(
-      variable, language.variableToVampire(variable), subf
+      variable, language.variableToVampire(variable), null, subf
     ),
     universalQuant: (variable, subf) => new UniversalQuant(
-      variable, language.variableToVampire(variable), subf
+      variable, language.variableToVampire(variable), null, subf
     )
   };
 }

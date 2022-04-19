@@ -10,7 +10,11 @@ module.exports = {
   DB_PORT: process.env.DB_PORT,
   DB_NAME: process.env.DB_NAME,
   PATH_TO_VAMPIRE: process.env.PATH_TO_VAMPIRE,
-  ACCESS_TOKEN_SECRET: process.env.ACCESS_TOKEN_SECRET,
+  TOKEN_SECRET: process.env.TOKEN_SECRET,
   REFRESH_TOKEN_SECRET: process.env.REFRESH_TOKEN_SECRET,
-  SECRET_KEY: process.env.REACT_APP_SECRET_KEY
+  SECRET_KEY: process.env.REACT_APP_SECRET_KEY,
+  ADMIN_NAME: process.env.ADMIN_NAME,
+  ADMIN_PASSWORD: process.env.ADMIN_PASSWORD,
+  CLIENT_ID: process.env.CLIENT_ID,
+  CLIENT_SECRET: process.env.CLIENT_SECRET,
 };
