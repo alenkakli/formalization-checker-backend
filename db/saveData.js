@@ -59,7 +59,39 @@ const saveFormalization = async (propositionID, formalization) => {
   }
 };
 
+const saveSolution = async (studentID, propositionID, studentSolution, correctSolution) => {
+  try {
+    const queryText =
+        'INSERT INTO solutions(user_id, proposition_id, solution, is_correct) '
+        + 'VALUES($1, $2, $3, $4) returning solution_id';
+    await pool.query(
+        queryText,
+        [ studentID, propositionID, studentSolution, correctSolution ]
+    );
+
+  } catch (err) {
+    console.error(err.stack);
+  }
+};
+
+const saveUser = async (user_id, gitToken ) => {
+  try {
+    const queryText =
+        'INSERT INTO users(user_id, git_token) '
+        + 'VALUES($1, $2)';
+    await pool.query(
+        queryText,
+        [ user_id, gitToken]
+    );
+
+  } catch (err) {
+    console.error(err.stack);
+  }
+};
+
 
 module.exports = {
-  saveExercise
+  saveExercise,
+  saveSolution,
+  saveUser
 };

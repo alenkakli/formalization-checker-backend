@@ -4,7 +4,7 @@ const {
   ACCESS_TOKEN_SECRET, REFRESH_TOKEN_SECRET
 } = require('../../config');
 const { checkExercise } = require('../../helpers/checks');
-const { saveExercise } = require('../../db/saveData');
+const { saveExercise, saveSolution} = require('../../db/saveData');
 const {
   getExercisePreviews, getExerciseByID,
   getAllFormalizationsForProposition
@@ -15,7 +15,6 @@ const evaluate = require('../../helpers/evaluate');
 router.post('/', async (req, res) => {
   try {
     let exercise = req.body;
-
     if (checkExercise(exercise)) {
       await saveExercise(exercise);
     } else {
@@ -51,7 +50,6 @@ router.get('/', async (req, res) => {
 router.get('/:exercise_id', async (req, res) => {
   try {
     const { exercise_id } = req.params;
-    
     const parsed_exercise_id = parseInt(exercise_id, 10);
     if (isNaN(parsed_exercise_id)) {
       res.sendStatus(404).end();
@@ -75,8 +73,7 @@ router.get('/:exercise_id', async (req, res) => {
 router.post('/:exercise_id/:proposition_id', async (req, res) => {
   try {
     let { exercise_id, proposition_id } = req.params;
-    let { solution } = req.body;
-    
+    let { solution, user_id } = req.body;
     exercise_id = parseInt(exercise_id, 10);
     proposition_id = parseInt(proposition_id, 10);
     if (isNaN(exercise_id) || isNaN(proposition_id)) {
@@ -92,9 +89,24 @@ router.post('/:exercise_id/:proposition_id', async (req, res) => {
       res.sendStatus(404);
       return;
     }
+    if(isNaN(parseInt(user_id))){
+      console.error('Missing log in user');
+      res.sendStatus(404);
+      return;
+    }
 
     try {
-      evaluate(solution, formalizations, exercise, res);
+
+      function saveSolutionWithResult (eval_status)  {
+        if(eval_status.solutionToFormalization === 'OK' && eval_status.formalizationToSolution === 'OK'){
+          saveSolution(user_id, proposition_id, solution, true);
+        }
+        else{
+          saveSolution(user_id, proposition_id, solution, false);
+        }
+      }
+      evaluate(solution, formalizations, exercise, res, saveSolutionWithResult );
+
     } catch (err) {
       console.error(err.message);
       res.sendStatus(400);
@@ -104,5 +116,6 @@ router.post('/:exercise_id/:proposition_id', async (req, res) => {
     res.sendStatus(503);
   }
 });
+
 
 module.exports = router;
