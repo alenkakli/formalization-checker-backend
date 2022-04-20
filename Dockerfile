@@ -13,8 +13,9 @@ RUN git clone https://github.com/vprover/vampire.git
 
 WORKDIR /usr/src/vampire-build
 
-RUN cmake ../vampire; \
-    make; \
+RUN set -ex; \
+    cmake ../vampire; \
+    make -j 4; \
     cd bin; \
     cp -a vampire_* vampire
 
@@ -26,10 +27,23 @@ COPY --from=vampire-build /usr/src/vampire-build/bin/vampire .
 
 ENV PATH_TO_VAMPIRE=/usr/local/bin/vampire
 
+WORKDIR /usr/src
+
+RUN set -ex; \
+    git clone --branch tptp https://github.com/nikolakulikova/js-fol-parser.git
+
+RUN set -ex; \
+    cd js-fol-parser; \
+    npm install; \
+    npm run build
+
 WORKDIR /usr/src/formalization-checker-back-end
 
 COPY . .
 
-RUN npm install
+RUN set -ex; \
+    npm install
+
+EXPOSE 3000
 
 CMD [ "npm", "run", "start" ]
