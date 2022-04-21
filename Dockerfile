@@ -37,7 +37,7 @@ RUN set -ex; \
     npm install; \
     npm run build
 
-WORKDIR /usr/src/formalization-checker-back-end
+WORKDIR /usr/src/formalization-checker-backend
 
 COPY . .
 
