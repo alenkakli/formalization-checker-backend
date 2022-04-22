@@ -23,7 +23,7 @@ const saveExercise = async (
   }
 };
 
-const saveProposition = async (exerciseID, { proposition, formalizations }) => {
+const saveProposition = async (exerciseID, { proposition, formalizations, constraints }) => {
   try {
     const queryText =
       'INSERT INTO propositions(proposition, exercise_id) '
