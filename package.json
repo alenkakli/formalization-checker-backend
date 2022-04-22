@@ -1,9 +1,6 @@
 {
   "name": "formalization-checker-back-end",
   "version": "1.0.0",
-  "js-fol-parser": {
-    "file": "../../js-fol-parser"
-  },
   "description": "",
   "main": "index.js",
   "scripts": {
