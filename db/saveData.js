@@ -47,7 +47,7 @@ const saveProposition = async (exerciseID, { proposition, formalizations }) => {
 const saveFormalization = async (propositionID, formalization, constraint) => {
   try {
     const queryText =
-      'INSERT INTO formalizations(formalization, constraint, proposition_id) '
+      'INSERT INTO formalizations(formalization, constraints, proposition_id) '
       + 'VALUES($1, $2, $3)';
     await pool.query(
       queryText,
