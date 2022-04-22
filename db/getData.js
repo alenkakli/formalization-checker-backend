@@ -2,7 +2,7 @@ const pool = require('./db');
 
 const getExercisePreviews = async () => {
   try {
-    const queryText = 'SELECT e.exercise_id, e.title, count(DISTINCT(s.user_id)) as attempted FROM (exercises as e INNER JOIN propositions as p ON e.exercise_id = p.exercise_id ) INNER JOIN solutions as s ON s.proposition_id = p.proposition_id GROUP BY e.exercise_id, e.title;'
+    const queryText = 'SELECT e.exercise_id, e.title , count(DISTINCT(s.user_id)) as attempted  FROM (exercises as e INNER JOIN propositions as p ON e.exercise_id = p.exercise_id )  LEFT JOIN solutions as s ON s.proposition_id = p.proposition_id GROUP BY e.exercise_id;'
     const res = await pool.query(queryText);
 
     return res.rows;
