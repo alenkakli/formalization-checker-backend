@@ -102,10 +102,10 @@ module.exports = async function evalWithVampire(
 
 const toVampireInput = (lhs, constr1, constr2, rhs) => {
     let input = `fof(a,axiom,${lhs}). fof(b,conjecture,${rhs}).`
-    if(constr1 !== ""){
+    if(constr1 !== undefined && constr1 !== ''){
         input += `fof(a,axiom,${constr1}).`;
     }
-    if(constr2 !== ""){
+    if(constr2 !== undefined && constr2 !== ''){
         input += `fof(a,axiom,${constr2}).`;
     }
     return input;

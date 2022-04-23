@@ -12,6 +12,7 @@ const evalWithVampire = require('./vampire');
 module.exports = function evaluate(
   solution, formalizations, exercise, res, saveSolutionWithResult
 ) {
+
   let { constants, predicates, functions, constraint  } = getLanguage(exercise);
 
   let language = new LanguageToVampire();
@@ -20,17 +21,20 @@ module.exports = function evaluate(
   solution = parseFormalization(
     solution, constants, predicates, functions, factories
   ).toVampire();
-  if(constraint !== ""){
+
+  if(constraint !== undefined && constraint !== ''  ){
     constraint = parseFormalization(
         constraint, constants, predicates, functions, factories
     ).toVampire();
   }
+
   let constraintFromProp =  formalizations[0].constraints;
-  if(constraintFromProp !== ""){
+  if(constraintFromProp !== undefined && constraintFromProp !== ''){
     constraintFromProp = parseFormalization(
         constraintFromProp, constants, predicates, functions, factories
     ).toVampire();
   }
+
 //todo opytat sa ci neskusat vsetky a ak ano ako, for a ako vratit ktoru
   formalization = parseFormalization(
     formalizations[0].formalization,
