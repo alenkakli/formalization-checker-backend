@@ -35,7 +35,8 @@ RUN set -ex; \
 RUN set -ex; \
     cd js-fol-parser; \
     npm install; \
-    npm run build
+    npm run build; \
+    npm prune --production
 
 WORKDIR /usr/src/formalization-checker-backend
 
