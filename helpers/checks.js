@@ -3,7 +3,7 @@ const {
   parsePredicates,
   parseFunctions,
   parseFormulaWithPrecedence
-} = require('../../js-fol-parser');
+} = require("@fmfi-uk-1-ain-412/js-fol-parser");
 
 const getLanguage = (exercise) => {
   constants = parseConstants(exercise.constants);

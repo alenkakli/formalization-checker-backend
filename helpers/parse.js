@@ -1,4 +1,4 @@
-const { parseTff } = require('../../js-fol-parser');
+const { parseTff } = require("@fmfi-uk-1-ain-412/js-fol-parser");
 var chance = require('chance').Chance();
 const {
     getLanguage
