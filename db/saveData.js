@@ -104,10 +104,45 @@ const updateAdmins = async (name, is_admin ) => {
   }
 };
 
+const updateExercise = async (exercise) => {
+  try {
+    const queryText =
+        'UPDATE exercises SET title = $2, description = $3, constants = $4, predicates = $5, functions = $6, constraints = $7'
+        + 'WHERE  exercise_id = $1';
+    await pool.query(
+        queryText,
+        [ exercise.id, exercise.title, exercise.description, exercise.constants, exercise.predicates, exercise.functions, exercise.constraint,]
+    );
+    for(let i = 0; i < exercise.propositions.length; i++){
+      await removeProposition(exercise.id);
+      await saveProposition(exercise.id, {"proposition": exercise.propositions[i].proposition, "formalizations": exercise.propositions[i].formalizations, "constraints": exercise.propositions[i].constraints})
+    }
+
+  } catch (err) {
+    console.error(err.stack);
+  }
+};
+
+const removeProposition = async (exercise_id) => {
+  try {
+    const queryText =
+        'DELETE FROM propositions WHERE exercise_id = $1;';
+    await pool.query(
+        queryText,
+        [ exercise_id]
+    );
+  } catch (err) {
+    console.error(err.stack);
+  }
+};
+
 
 module.exports = {
   saveExercise,
   saveSolution,
   saveUser,
-  updateAdmins
+  updateAdmins,
+  updateExercise,
+  removeProposition,
+
 };

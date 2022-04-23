@@ -69,6 +69,35 @@ const getExerciseByID = async (exercise_id) => {
   }
 };
 
+
+const getExerciseByIDWithFormalizations = async (exercise_id) => {
+  try {
+    const queryText =
+      'SELECT * FROM exercises WHERE exercise_id = $1';
+    const res = await pool.query(
+      queryText,
+      [ exercise_id ]
+    );
+
+    let propositions = await getAllPropositionsForExercise(exercise_id);
+    if (res.rows.length !== 1 || !propositions) {
+      return null;
+    }
+
+    let exercise = res.rows[0];
+    for(let i = 0; i < propositions.length; i++){
+      propositions[i].formalization = await getAllFormalizationsForProposition(propositions[i].proposition_id);
+    }
+
+    exercise.propositions = propositions;
+
+    return exercise;
+
+  } catch (err) {
+    return null;
+  }
+};
+
 const getAllPropositionsForExercise = async (exercise_id) => {
   try {
     const queryText =
@@ -112,7 +141,7 @@ const getAllFormalizationsForProposition = async (proposition_id) => {
 const getUsersByExerciseId = async (exercise_id) => {
   try {
     const queryText =
-        'SELECT DISTINCT(u.user_name), (SELECT COUNT(proposition_id) FROM solutions WHERE is_correct = true  ) as solved, COUNT(p.exercise_id) as attempts, p.exercise_id FROM solutions as s INNER JOIN propositions as p ON p.proposition_id = s.proposition_id INNER JOIN users as u ON u.github_id = s.user_id WHERE p.exercise_id = $1 GROUP BY u.user_name, p.exercise_id;'
+        'SELECT DISTINCT(u.user_name),  COUNT(s.is_correct)  filter (where s.is_correct = TRUE) as solved, COUNT(p.exercise_id) as attempts, p.exercise_id FROM solutions as s INNER JOIN propositions as p ON p.proposition_id = s.proposition_id INNER JOIN users as u ON u.github_id = s.user_id WHERE p.exercise_id = $1 GROUP BY u.user_name, p.exercise_id, p.exercise_id';
     ;
     const res = await pool.query(
       queryText,
@@ -128,7 +157,7 @@ const getUsersByExerciseId = async (exercise_id) => {
 const getUserSolutions = async (user_id, exercise_id) => {
   try {
     const queryText =
-      'SELECT s.solution, s.date, s.is_correct, p.proposition FROM solutions AS s INNER JOIN propositions as p ON p.proposition_id = s.proposition_id  INNER JOIN users as u ON s.user_id = u.github_id WHERE p.exercise_id = $1 AND u.user_name = $2 ORDER BY p.proposition, s.date DESC';
+      'SELECT s.solution, s.date, s.is_correct, p.proposition as proposition FROM propositions AS p LEFT JOIN solutions as s ON p.proposition_id = s.proposition_id  LEFT JOIN users as u ON s.user_id = u.github_id WHERE p.exercise_id = $1 AND u.user_name = $2 ORDER BY p.proposition_id, s.date DESC';
 
     const res = await pool.query(
       queryText,
@@ -147,6 +176,7 @@ module.exports = {
   getExerciseByID,
   getAllFormalizationsForProposition,
   getUserId,
+  getExerciseByIDWithFormalizations,
   getUser,
   getUsersByExerciseId,
   getUserSolutions,

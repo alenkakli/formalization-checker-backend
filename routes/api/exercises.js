@@ -4,8 +4,8 @@ const {
   ACCESS_TOKEN_SECRET, REFRESH_TOKEN_SECRET, TOKEN_SECRET
 } = require('../../config');
 const { checkExercise } = require('../../helpers/checks');
-const { saveExercise, saveSolution, saveUser, updateAdmins} = require('../../db/saveData');
-const { getUserId, getUser, getUserSolutions, getAllUsers} = require('../../db/getData');
+const { saveExercise, saveSolution, saveUser, updateAdmins, updateExercise} = require('../../db/saveData');
+const { getUserId, getUser, getUserSolutions, getAllUsers, getExerciseByIDWithFormalizations} = require('../../db/getData');
 const { ADMIN_NAME, ADMIN_PASSWORD, CLIENT_ID, CLIENT_SECRET} = require('../../config');
 const request = require('request');
 const {
@@ -16,6 +16,7 @@ const {
 const evaluate = require('../../helpers/evaluate');
 const {json} = require("express");
 const jwt = require('jsonwebtoken');
+const e = require("express");
 
 const authenticateJWT = (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -104,6 +105,23 @@ router.post('/allUsers', authenticateJWT , async (req, res) => {
   }
 });
 
+router.post('/edit', authenticateJWT , async (req, res) => {
+  try {
+    const exercise = req.body;
+    if (!exercise) {
+      res.sendStatus(404);
+      return;
+    }
+
+    await updateExercise(exercise);
+
+    res.status(200).json(exercise);
+  } catch (err) {
+    console.error(err.message);
+    res.sendStatus(503);
+  }
+});
+
 router.get('/:exercise_id', authenticateJWT, async (req, res) => {
   try {
     const { exercise_id } = req.params;
@@ -141,6 +159,27 @@ router.get('/progress/:exercise_id', authenticateJWT, async (req, res) => {
     }
     const users = await getUsersByExerciseId(parsed_exercise_id);
     res.status(200).json(users);
+
+  } catch (err) {
+    console.error(err.message);
+    res.sendStatus(503);
+  }
+});
+
+router.get('/edit/:exercise_id', authenticateJWT, async (req, res) => {
+  try {
+    if(!isAdmin(req.headers.authorization)){
+      res.sendStatus(403);
+      return;
+    }
+    const { exercise_id } = req.params;
+    const parsed_exercise_id = parseInt(exercise_id, 10);
+    if (isNaN(parsed_exercise_id)) {
+      res.sendStatus(404).end();
+      return;
+    }
+    const exercise = await getExerciseByIDWithFormalizations(parsed_exercise_id);
+    res.status(200).json(exercise);
 
   } catch (err) {
     console.error(err.message);
