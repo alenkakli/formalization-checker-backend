@@ -72,12 +72,12 @@ const getExerciseByID = async (exercise_id) => {
 const getAllPropositionsForExercise = async (exercise_id) => {
   try {
     const queryText =
-      'SELECT proposition_id, proposition FROM propositions WHERE exercise_id = $1';
+        'SELECT p.proposition_id, p.proposition, (SELECT solution FROM solutions WHERE proposition_id = p.proposition_id ORDER BY date DESC LIMIT 1) FROM propositions as p WHERE p.exercise_id = $1 ORDER BY p.proposition_id;';
     const res = await pool.query(
       queryText,
       [ exercise_id ]
     );
-    
+
     if (res.rows.length === 0) {
       return null;
     }
