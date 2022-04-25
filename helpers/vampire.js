@@ -73,7 +73,7 @@ module.exports = async function evalWithVampire(
       let {stdout, stderr} = await execFileWithInput(`${PATH_TO_VAMPIRE}`, [ '-t', timeLimit, '-sa', 'fmb' ], processInput);
 
       let result = checkVampireResult(stdout);
-      if (result === 500 || stderr) {
+      if (result === 500) {
           return {status: setStatus(result), domain: "", predicates: "", m: ""};
       }
       result = result[1];
