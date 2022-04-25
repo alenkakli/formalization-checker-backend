@@ -299,7 +299,7 @@ router.post('/logIn/github/auth' , async (req, res) => {
       }, async function (error, response, body) {
         body = JSON.parse(body);
         if (body.id !== undefined) {
-          saveUser(body.id, body.login);
+          await saveUser(body.id, body.login);
           let user = await getUser(body.login);
           const token = generateAccessToken({username: user[0].user_name, isAdmin: user[0].is_admin});
           res.status(200).json({"token": token});
