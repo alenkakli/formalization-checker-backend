@@ -62,7 +62,7 @@ module.exports = async function evalWithVampire(
     let { stdout, stderr} = await execFileWithInput(`${PATH_TO_VAMPIRE}`, [ '-t', timeLimit ], processInput, '', '' );
     let result = checkVampireResult(stdout);
     if (result === 500) {
-      res.status(500);
+        return setStatus(result);
     }
 
     result = result[1];
@@ -71,9 +71,10 @@ module.exports = async function evalWithVampire(
   async function vampireStructure(formalization1, formalization2, constraintToExer, constraintToProp, timeLimit, language, exercise) {
       let processInput = toVampireInput(formalization1, constraintToExer, constraintToProp, formalization2);
       let {stdout, stderr} = await execFileWithInput(`${PATH_TO_VAMPIRE}`, [ '-t', timeLimit, '-sa', 'fmb' ], processInput);
+
       let result = checkVampireResult(stdout);
       if (result === 500 || stderr) {
-          res.status(500).json(eval_status);
+          return {status: setStatus(result), domain: "", predicates: "", m: ""};
       }
       result = result[1];
       if (stdout.includes("Finite Model Found!")) {
