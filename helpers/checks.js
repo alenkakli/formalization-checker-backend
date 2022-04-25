@@ -9,7 +9,7 @@ const getLanguage = (exercise) => {
   constants = parseConstants(exercise.constants);
   predicates = parsePredicates(exercise.predicates);
   functions = parseFunctions(exercise.functions);
-  constraint = exercise.constraint;
+  constraint = exercise.constraints;
   if (containsDuplicates(constants)
       || containsDuplicates(predicates.map(x => x.name))
       || containsDuplicates(functions.map(x => x.name))) {
