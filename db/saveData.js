@@ -113,8 +113,8 @@ const updateExercise = async (exercise) => {
         queryText,
         [ exercise.id, exercise.title, exercise.description, exercise.constants, exercise.predicates, exercise.functions, exercise.constraint,]
     );
+   await removeProposition(exercise.id);
     for(let i = 0; i < exercise.propositions.length; i++){
-      await removeProposition(exercise.id);
       await saveProposition(exercise.id, {"proposition": exercise.propositions[i].proposition, "formalizations": exercise.propositions[i].formalizations, "constraints": exercise.propositions[i].constraints})
     }
 
