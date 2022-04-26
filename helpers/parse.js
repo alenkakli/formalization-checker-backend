@@ -13,8 +13,10 @@ function getStructure(structure, language, exercise){
     let symbols = {};
     let poc = 1;
 
-    getLanguage(exercise).constants.forEach(key => constants[key] = poc);
-    poc++;
+    getLanguage(exercise).constants.forEach(key => { constants[key] = poc;
+                                                                poc++;
+                                                            });
+
 
     for(let i = 0; i < structure.length - 1; i++ ){
         if(structure[i] === "\n" ){
