@@ -122,16 +122,17 @@ router.post('/edit', authenticateJWT , async (req, res) => {
   }
 });
 
-router.get('/:exercise_id', authenticateJWT, async (req, res) => {
+router.post('/:exercise_id', authenticateJWT, async (req, res) => {
   try {
     const { exercise_id } = req.params;
+    const user_name = req.body.username;
     const parsed_exercise_id = parseInt(exercise_id, 10);
     if (isNaN(parsed_exercise_id)) {
       res.sendStatus(404).end();
       return;
     }
 
-    const exercise = await getExerciseByID(exercise_id);
+    const exercise = await getExerciseByID(exercise_id, user_name);
     if (!exercise) {
       res.sendStatus(404);
       return;

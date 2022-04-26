@@ -46,7 +46,7 @@ const getUser= async (user_login) => {
   }
 };
 
-const getExerciseByID = async (exercise_id) => {
+const getExerciseByID = async (exercise_id, user_name) => {
   try {
     const queryText =
       'SELECT * FROM exercises WHERE exercise_id = $1';
@@ -55,7 +55,7 @@ const getExerciseByID = async (exercise_id) => {
       [ exercise_id ]
     );
 
-    let propositions = await getAllPropositionsForExercise(exercise_id);
+    let propositions = await getAllPropositionsForExercise(exercise_id, user_name);
     if (res.rows.length !== 1 || !propositions) {
       return null;
     }
@@ -79,7 +79,7 @@ const getExerciseByIDWithFormalizations = async (exercise_id) => {
       [ exercise_id ]
     );
 
-    let propositions = await getAllPropositionsForExercise(exercise_id);
+    let propositions = await getAllPropositionsForExercise(exercise_id, null);
     if (res.rows.length !== 1 || !propositions) {
       return null;
     }
@@ -98,13 +98,13 @@ const getExerciseByIDWithFormalizations = async (exercise_id) => {
   }
 };
 
-const getAllPropositionsForExercise = async (exercise_id) => {
+const getAllPropositionsForExercise = async (exercise_id, user_name) => {
   try {
     const queryText =
-        'SELECT p.proposition_id, p.proposition, (SELECT solution FROM solutions WHERE proposition_id = p.proposition_id ORDER BY date DESC LIMIT 1) FROM propositions as p WHERE p.exercise_id = $1 ORDER BY p.proposition_id;';
+        'SELECT p.proposition_id, p.proposition, (SELECT s.solution FROM solutions as s LEFT JOIN users as u ON s.user_id = u.github_id   WHERE s.proposition_id = p.proposition_id AND u.user_name = $2 ORDER BY date DESC LIMIT 1) FROM propositions as p WHERE p.exercise_id = $1 ORDER BY p.proposition_id';
     const res = await pool.query(
       queryText,
-      [ exercise_id ]
+      [ exercise_id, user_name ]
     );
 
     if (res.rows.length === 0) {
