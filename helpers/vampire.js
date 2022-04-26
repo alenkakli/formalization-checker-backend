@@ -58,15 +58,24 @@ module.exports = async function evalWithVampire(
 }
 
   async function vampire(formalization1, formalization2, timeLimit) {
-    let processInput = toVampireInput(formalization1, "", "", formalization2);
-    let { stdout, stderr} = await execFileWithInput(`${PATH_TO_VAMPIRE}`, [ '-t', timeLimit ], processInput, '', '' );
-    let result = checkVampireResult(stdout);
-    if (result === 500) {
+    try{
+        let processInput = toVampireInput(formalization1, "", "", formalization2);
+        let { stdout, stderr} = await execFileWithInput(`${PATH_TO_VAMPIRE}`, [ '-t', timeLimit ], processInput, '', '' );
+        let result = checkVampireResult(stdout);
+        if (result === 500) {
+            return setStatus(result);
+        }
+
+        result = result[1];
         return setStatus(result);
     }
+    catch (err){
+        if(err.message.substr(0, 15 ) === "Command failed:" && err.code === 1){
+            return {status: setStatus("Time"), domain: "", predicates: "", m: ""};
+        }
+        return {status: setStatus("failed"), domain: "", predicates: "", m: ""};
+    }
 
-    result = result[1];
-    return setStatus(result);
   }
   async function vampireStructure(formalization1, formalization2, constraintToExer, constraintToProp, timeLimit, language, exercise) {
       let processInput = toVampireInput(formalization1, constraintToExer, constraintToProp, formalization2);
@@ -90,6 +99,7 @@ module.exports = async function evalWithVampire(
           if(err.message.substr(0, 15 ) === "Command failed:" && err.code === 1){
               return {status: setStatus("Time"), domain: "", predicates: "", m: ""};
           }
+          return {status: setStatus("failed"), domain: "", predicates: "", m: ""};
       }
 
   }
