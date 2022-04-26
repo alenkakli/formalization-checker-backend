@@ -70,20 +70,28 @@ module.exports = async function evalWithVampire(
   }
   async function vampireStructure(formalization1, formalization2, constraintToExer, constraintToProp, timeLimit, language, exercise) {
       let processInput = toVampireInput(formalization1, constraintToExer, constraintToProp, formalization2);
-      let {stdout, stderr} = await execFileWithInput(`${PATH_TO_VAMPIRE}`, [ '-t', timeLimit, '-sa', 'fmb' ], processInput);
+      try{
+          let {stdout, stderr} = await execFileWithInput(`${PATH_TO_VAMPIRE}`, [ '-t', timeLimit, '-sa', 'fmb' ], processInput);
 
-      let result = checkVampireResult(stdout);
-      if (result === 500) {
+          let result = checkVampireResult(stdout);
+          if (result === 500) {
+              return {status: setStatus(result), domain: "", predicates: "", m: ""};
+          }
+          result = result[1];
+          if (stdout.includes("Finite Model Found!")) {
+              let structure = stdout.slice(stdout.indexOf("tff"), stdout.length);
+              structure = structure.slice(0, structure.indexOf("% SZS"));
+              structure = getStructure(structure, language, exercise);
+              return {status: setStatus(result), constants: structure.constants, symbols: structure.symbols, m:"𝓜 = (𝘿, 𝑖)", language: structure.language};
+          }
           return {status: setStatus(result), domain: "", predicates: "", m: ""};
       }
-      result = result[1];
-      if (stdout.includes("Finite Model Found!")) {
-          let structure = stdout.slice(stdout.indexOf("tff"), stdout.length);
-          structure = structure.slice(0, structure.indexOf("% SZS"));
-          structure = getStructure(structure, language, exercise);
-          return {status: setStatus(result), constants: structure.constants, symbols: structure.symbols, m:"𝓜 = (𝘿, 𝑖)", language: structure.language};
+      catch (err){
+          if(err.message.substr(0, 15 ) === "Command failed:" && err.code === 1){
+              return {status: setStatus("Time"), domain: "", predicates: "", m: ""};
+          }
       }
-      return {status: setStatus(result), domain: "", predicates: "", m: ""};
+
   }
 
   async function callVampireConstraints(formalization1, formalization2, constraintToExer, constraintToProp, timeLimit, language, exercise){
