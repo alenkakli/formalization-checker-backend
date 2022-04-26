@@ -35,7 +35,7 @@ async function evalWithVampire(
         res.status(200).json(eval_status);
         saveSolutionWithResult(eval_status);
     } else {
-        let notFound = ' sa nepodarilo nájsť, na vaše riešenie sa radšej opýtajte.';
+        let notFound = ' sa nepodarilo nájsť automaticky. Ak neviete nájsť chybu, poraďte sa s vyučujúcimi.';
         let structureSolutionToFormalization = ', v ktorej je vaša formalizácia pravdivá, ale hľadaná správna formalizácia je nepravdivá'
         let structureFormalizationToSolution = ', v ktorej je vaša formalizácia nepravdivá, ale hľadaná správna formalizácia je pravdivá'
 
@@ -91,7 +91,7 @@ async function evalWithVampire(
               let structure = stdout.slice(stdout.indexOf("tff"), stdout.length);
               structure = structure.slice(0, structure.indexOf("% SZS"));
               structure = getStructure(structure, language, exercise);
-              return {status: setStatus(result), constants: structure.constants, symbols: structure.symbols, m:"𝓜 = (𝘿, 𝑖)", language: structure.language};
+              return {status: setStatus(result), constants: structure.constants, symbols: structure.symbols, m:"𝓜 = (𝐷, 𝑖)", language: structure.language};
           }
           return {status: setStatus(result), domain: "", predicates: "", m: ""};
       }
