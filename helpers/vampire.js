@@ -49,7 +49,7 @@ module.exports = async function evalWithVampire(
 
         vampireOutput = await callVampireConstraints(solution, formalization, constraintToExer, constraintToProp, timeLimit, language, exercise)
         eval_status.domainSolutionToFormalization = vampireOutput.constants !== undefined ? vampireOutput.constants : '';
-        eval_status.m2 = vampireOutput.m !== '' ? "Štruktúra " + vampireOutput.m + structureFormalizationToSolution + ":"
+        eval_status.m2 = vampireOutput.m !== '' ? "Štruktúra " + vampireOutput.m + structureSolutionToFormalization + ":"
             : "Štruktúra"+ vampireOutput.m  + structureSolutionToFormalization + ","  + notFound ;
         eval_status.symbolsSolutionToFormalization = vampireOutput.symbols !== undefined ? vampireOutput.symbols : '';
         res.status(200).json(eval_status);
