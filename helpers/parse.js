@@ -8,6 +8,7 @@ const {Variable, Constant, FunctionApplication, PredicateAtom,
     Equivalence, ExistentialQuant, UniversalQuant} = require('./formula_classes');
 
 function getStructure(structure, language, exercise){
+    console.log(structure);
     structure = structure.split(".");
     let constants = {}
     let symbols = {};
@@ -29,7 +30,10 @@ function getStructure(structure, language, exercise){
         }
 
         if(parsed_formula.name.includes("predicate")){
-            if(parsed_formula.formula.constructor.name === "Conjunction"){
+            if(parsed_formula.formula instanceof Conjunction){
+                poc = parsePredicate(parsed_formula, poc, symbols, constants).poc;
+            }
+            else if(parsed_formula.formula instanceof PredicateAtom){
                 poc = parsePredicate(parsed_formula, poc, symbols, constants).poc;
             }
             else{
@@ -41,23 +45,23 @@ function getStructure(structure, language, exercise){
         }
         if(parsed_formula.name.includes("function")){
             let functionAplications ;
-            if(parsed_formula.formula.constructor.name === "Conjunction"){
+            if(parsed_formula.formula instanceof Conjunction){
                 functionAplications = parsed_formula.formula.getAll()
             }
-            else if (parsed_formula.formula.constructor.name === "FunctionApplication"){
-                functionAplications = [parsed_formula.formula];
+            else if (parsed_formula.formula instanceof FunctionApplication){
+                functionAplications = parsed_formula.formula.getAll();
             }
             poc =  parseFunction(parsed_formula, poc, symbols, constants,functionAplications).poc;
         }
         if(parsed_formula.name.includes("definition")){
             let constant ;
-                if(parsed_formula.formula.constructor.name === "Conjuction") {
+                if(parsed_formula.formula instanceof Conjunction) {
                     constant = parsed_formula.formula.getAll()
                 }
-                if(parsed_formula.formula.constructor.name === "Disjunction") {
+                if(parsed_formula.formula instanceof Disjunction) {
                     constant = parsed_formula.formula.getAll()
                 }
-                if (parsed_formula.formula.constructor.name === "EqualityAtom") {
+                if (parsed_formula.formula instanceof EqualityAtom) {
                     constant = parsed_formula.formula.getAll()
                 } else {
                     constant = [parsed_formula.formula];
@@ -68,7 +72,7 @@ function getStructure(structure, language, exercise){
 
         }
         if(parsed_formula.name.includes("finite_domain")){
-            if(parsed_formula.formula.constructor.name === "UniversalQuant"){
+            if(parsed_formula.formula instanceof UniversalQuant){
                 if(parsed_formula.formula.type === "i"){
                     poc = parseUniQuant(parsed_formula, poc, symbols, constants).poc;
                 }
