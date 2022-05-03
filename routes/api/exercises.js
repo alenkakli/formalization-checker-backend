@@ -73,9 +73,10 @@ router.get('/', authenticateJWT , async (req, res) => {
   }
 });
 
-router.get('/allUsers', authenticateJWT , async (req, res) => {
+router.get('/allUsers/:user_name', authenticateJWT , async (req, res) => {
   try {
-    const users = await getAllUsers();
+     const  user  = req.params.user_name;
+    const users = await getAllUsers(user);
     if (!users) {
       res.sendStatus(404);
       return;

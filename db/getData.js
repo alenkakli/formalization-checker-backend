@@ -12,10 +12,10 @@ const getExercisePreviews = async () => {
   }
 };
 
-const getAllUsers = async () => {
+const getAllUsers = async (user) => {
   try {
-    const queryText = 'SELECT user_name, is_admin FROM users;'
-    const res = await pool.query(queryText);
+    const queryText = 'SELECT user_name, is_admin FROM users WHERE user_name != $1;'
+    const res = await pool.query(queryText, [user]);
 
     return res.rows;
 
