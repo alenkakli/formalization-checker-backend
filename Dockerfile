@@ -9,7 +9,7 @@ RUN set -ex; \
 
 WORKDIR /usr/src
 
-RUN git clone https://github.com/vprover/vampire.git
+RUN git clone --branch v4.6.1.sl https://github.com/vprover/vampire.git
 
 WORKDIR /usr/src/vampire-build
 
