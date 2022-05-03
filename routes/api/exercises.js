@@ -1,10 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const {
-  ACCESS_TOKEN_SECRET, REFRESH_TOKEN_SECRET, TOKEN_SECRET
+const {TOKEN_SECRET
 } = require('../../config');
 const { checkExercise } = require('../../helpers/checks');
-const { saveExercise, saveSolution, saveUser, updateAdmins, updateExercise} = require('../../db/saveData');
+const { saveExercise, saveSolution, saveUser, updateAdmins, updateExercise, removeExercise} = require('../../db/saveData');
 const { getUserId, getUser, getUserSolutions, getAllUsers, getExerciseByIDWithFormalizations} = require('../../db/getData');
 const { ADMIN_NAME, ADMIN_PASSWORD, CLIENT_ID, CLIENT_SECRET} = require('../../config');
 const request = require('request');
@@ -115,6 +114,23 @@ router.post('/edit', authenticateJWT , async (req, res) => {
     }
 
     await updateExercise(exercise);
+
+    res.status(200).json(exercise);
+  } catch (err) {
+    console.error(err.message);
+    res.sendStatus(503);
+  }
+});
+
+router.post('/edit/remove', authenticateJWT , async (req, res) => {
+  try {
+    const exercise = req.body;
+    if (!exercise) {
+      res.sendStatus(404);
+      return;
+    }
+
+    await removeExercise(exercise);
 
     res.status(200).json(exercise);
   } catch (err) {

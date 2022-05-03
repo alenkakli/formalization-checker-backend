@@ -136,6 +136,19 @@ const removeProposition = async (exercise_id) => {
   }
 };
 
+const removeExercise = async (exercise) => {
+  try {
+    const queryText =
+        'DELETE FROM exercises WHERE exercise_id = $1;';
+    await pool.query(
+        queryText,
+        [ exercise.id]
+    );
+  } catch (err) {
+    console.error(err.stack);
+  }
+};
+
 
 module.exports = {
   saveExercise,
@@ -144,5 +157,6 @@ module.exports = {
   updateAdmins,
   updateExercise,
   removeProposition,
+  removeExercise
 
 };
