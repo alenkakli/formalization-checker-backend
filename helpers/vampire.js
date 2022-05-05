@@ -15,7 +15,7 @@ const execFileWithInput = (file, args, input, callback) =>
     });
 
 
-module.exports = async function evalWithVampire(
+async function evalWithVampire(
     res, solution, constraintToExer, constraintToProp, formalization, saveSolutionWithResult, language, exercise, timeLimit = 10
 ) {
     let eval_status = {
@@ -155,3 +155,7 @@ function setStatus(result) {
         console.error('Unknown evaluation result.');
     }
 }
+module.exports = {
+    vampire,
+    evalWithVampire
+};

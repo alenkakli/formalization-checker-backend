@@ -8,37 +8,66 @@ const {
   Equivalence, ExistentialQuant, UniversalQuant
 } = require('./formula_classes');
 const LanguageToVampire = require('./language');
-const evalWithVampire = require('./vampire');
-module.exports = function evaluate(
-  solution, formalizations, exercise, res, saveSolutionWithResult
+const {evalWithVampire} = require('./vampire');
+const {vampire} = require("./vampire");
+
+module.exports = async function evaluate(
+    solution, formalizations, exercise, res, saveSolutionWithResult
 ) {
 
-  let { constants, predicates, functions, constraint  } = getLanguage(exercise);
+  let {constants, predicates, functions, constraint} = getLanguage(exercise);
 
   let language = new LanguageToVampire();
   let factories = getFactoriesForLanguage(language);
 
   solution = parseFormalization(
-    solution, constants, predicates, functions, factories
+      solution, constants, predicates, functions, factories
   ).toVampire();
 
-  if(constraint !== undefined && constraint !== ''  ){
+  if (constraint !== undefined && constraint !== '') {
     constraint = parseFormalization(
         constraint, constants, predicates, functions, factories
     ).toVampire();
   }
 
-  let constraintFromProp =  formalizations[0].constraints;
-  if(constraintFromProp !== undefined && constraintFromProp !== ''){
+  let constraintFromProp = formalizations[0].constraints;
+  if (constraintFromProp !== undefined && constraintFromProp !== '') {
     constraintFromProp = parseFormalization(
         constraintFromProp, constants, predicates, functions, factories
     ).toVampire();
   }
 
-//todo opytat sa ci neskusat vsetky a ak ano ako, for a ako vratit ktoru
+  //set eval status for possibility to return if some formalization is correct with solution
+  let formalization;
+  let eval_status = {
+    solutionToFormalization: '',
+    m1: '',
+    m2: '',
+    formalizationToSolution: '',
+    domainSolutionToFormalization: '',
+    symbolsSolutionToFormalization: '',
+    domainFormalizationToSolution: '',
+    symbolsFormalizationToSolution: '',
+    languageContants: ''
+  };
+  for (let i = 0; i < formalizations.length; i++) {
+    formalization = parseFormalization(
+        formalizations[i].formalization,
+        constants, predicates, functions, factories
+    ).toVampire();
+    eval_status.solutionToFormalization = await vampire(solution, formalization, 10);
+    eval_status.formalizationToSolution = await vampire(formalization, solution, 10);
+    if (eval_status.formalizationToSolution === "OK" && eval_status.solutionToFormalization === "OK") {
+      res.status(200).json(eval_status);
+      saveSolutionWithResult(eval_status);
+      return;
+    }
+  }
+
+  // call first saved formalization in case solution is not correct with none of saved solution
   formalization = parseFormalization(
-    formalizations[0].formalization,
-    constants, predicates, functions, factories
+      formalizations[0].formalization,
+      constants, predicates, functions, factories
   ).toVampire();
 
   evalWithVampire(res, solution, constraint, constraintFromProp,  formalization, saveSolutionWithResult, language, exercise);
