@@ -141,7 +141,7 @@ const getAllFormalizationsForProposition = async (proposition_id) => {
 const getUsersByExerciseId = async (exercise_id) => {
   try {
     const queryText =
-        'SELECT DISTINCT(u.user_name),  COUNT(DISTINCT(p.proposition_id))  filter (where s.is_correct = TRUE) as solved, COUNT(p.exercise_id) as attempts, p.exercise_id FROM solutions as s INNER JOIN propositions as p ON p.proposition_id = s.proposition_id INNER JOIN users as u ON u.github_id = s.user_id WHERE p.exercise_id = $1 GROUP BY u.user_name, p.exercise_id';
+        'SELECT DISTINCT(u.user_name), COUNT(DISTINCT(p.proposition_id))  filter (where s.is_correct = TRUE) as solved, COUNT(DISTINCT(p.proposition_id)) as all,  COUNT(s.is_correct)  filter (where s.is_correct = TRUE) as successful_attempts, COUNT(p.exercise_id) as attempts, p.exercise_id FROM solutions as s INNER JOIN propositions as p ON p.proposition_id = s.proposition_id INNER JOIN users as u ON u.github_id = s.user_id WHERE p.exercise_id = $1 GROUP BY u.user_name, p.exercise_id';
     ;
     const res = await pool.query(
       queryText,
