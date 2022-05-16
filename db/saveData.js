@@ -5,8 +5,8 @@ const saveExercise = async (
 ) => {
   try {
     const queryText =
-      'INSERT INTO exercises(title, description, constants, predicates, functions, constraints) '
-      + 'VALUES($1, $2, $3, $4, $5, $6) RETURNING exercise_id';
+        'INSERT INTO exercises(title, description, constants, predicates, functions, constraints) '
+      + 'VALUES($1, $2, $3, $4, $5, $6) RETURNING exercise_id;'
     const res = await pool.query(
       queryText,
       [ title, description, constants, predicates, functions, constraint ]
@@ -27,7 +27,7 @@ const saveProposition = async (exerciseID, { proposition, formalizations, constr
   try {
     const queryText =
       'INSERT INTO propositions(proposition, exercise_id) '
-      + 'VALUES($1, $2) RETURNING proposition_id';
+      + 'VALUES($1, $2) RETURNING proposition_id;';
     const res = await pool.query(
       queryText,
       [ proposition, exerciseID ]
@@ -48,7 +48,7 @@ const saveFormalization = async (propositionID, formalization, constraint) => {
   try {
     const queryText =
       'INSERT INTO formalizations(formalization, constraints, proposition_id) '
-      + 'VALUES($1, $2, $3)';
+      + 'VALUES($1, $2, $3);';
     await pool.query(
       queryText,
       [ formalization, constraint, propositionID ]
@@ -63,7 +63,7 @@ const saveSolution = async (studentID, propositionID, studentSolution, correctSo
   try {
     const queryText =
         'INSERT INTO solutions(user_id, proposition_id, solution, is_correct, date) '
-        + 'VALUES($1, $2, $3, $4, NOW()::timestamp) returning solution_id';
+        + 'VALUES($1, $2, $3, $4, NOW()::timestamp) returning solution_id;' ;
     await pool.query(
         queryText,
         [ studentID, propositionID, studentSolution, correctSolution ]
@@ -78,7 +78,7 @@ const saveUser = async (github_id, user_name ) => {
   try {
     const queryText =
         'INSERT INTO users(github_id, user_name, is_admin)'
-        + 'VALUES($1, $2, FALSE) ON CONFLICT DO NOTHING;';
+        + 'VALUES($1, $2, FALSE) ON CONFLICT DO NOTHING;'
     await pool.query(
         queryText,
         [ github_id, user_name]
@@ -93,7 +93,7 @@ const updateAdmins = async (name, is_admin ) => {
   try {
     const queryText =
         'UPDATE users SET  is_admin = $2'
-        + 'WHERE  user_name = $1';
+        + 'WHERE  user_name = $1;' ;
     await pool.query(
         queryText,
         [ name, is_admin]
@@ -108,7 +108,7 @@ const updateExercise = async (exercise) => {
   try {
     const queryText =
         'UPDATE exercises SET title = $2, description = $3, constants = $4, predicates = $5, functions = $6, constraints = $7'
-        + 'WHERE  exercise_id = $1';
+        + 'WHERE  exercise_id = $1;' ;
     await pool.query(
         queryText,
         [ exercise.id, exercise.title, exercise.description, exercise.constants, exercise.predicates, exercise.functions, exercise.constraint,]

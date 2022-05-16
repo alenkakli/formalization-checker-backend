@@ -2,7 +2,8 @@ const pool = require('./db');
 
 const getExercisePreviews = async () => {
   try {
-    const queryText = 'SELECT e.exercise_id, e.title , count(DISTINCT(s.user_id)) as attempted  FROM (exercises as e INNER JOIN propositions as p ON e.exercise_id = p.exercise_id )  LEFT JOIN solutions as s ON s.proposition_id = p.proposition_id GROUP BY e.exercise_id;'
+    const queryText =
+        'SELECT e.exercise_id, e.title , count(DISTINCT(s.user_id)) as attempted  FROM (exercises as e INNER JOIN propositions as p ON e.exercise_id = p.exercise_id )  LEFT JOIN solutions as s ON s.proposition_id = p.proposition_id GROUP BY e.exercise_id;' ;
     const res = await pool.query(queryText);
 
     return res.rows;
@@ -26,7 +27,9 @@ const getAllUsers = async (user) => {
 
 const getUserId = async (user_login) => {
   try {
-    const queryText = 'SELECT github_id FROM users WHERE user_name=$1;';
+    const queryText =
+        'SELECT github_id FROM users WHERE user_name=$1;'
+
     const res = await pool.query(queryText, [user_login]);
     return res.rows;
 
@@ -37,7 +40,9 @@ const getUserId = async (user_login) => {
 
 const getUser= async (user_login) => {
   try {
-    const queryText = 'SELECT user_name, is_admin FROM users WHERE user_name=$1;';
+    const queryText =
+        'SELECT user_name, is_admin FROM users WHERE user_name=$1;'
+
     const res = await pool.query(queryText, [user_login]);
     return res.rows;
 
@@ -49,7 +54,7 @@ const getUser= async (user_login) => {
 const getExerciseByID = async (exercise_id, user_name) => {
   try {
     const queryText =
-      'SELECT * FROM exercises WHERE exercise_id = $1';
+      'SELECT * FROM exercises WHERE exercise_id = $1;';
     const res = await pool.query(
       queryText,
       [ exercise_id ]
@@ -73,7 +78,7 @@ const getExerciseByID = async (exercise_id, user_name) => {
 const getExerciseByIDWithFormalizations = async (exercise_id) => {
   try {
     const queryText =
-      'SELECT * FROM exercises WHERE exercise_id = $1';
+      'SELECT * FROM exercises WHERE exercise_id = $1;';
     const res = await pool.query(
       queryText,
       [ exercise_id ]
@@ -101,7 +106,7 @@ const getExerciseByIDWithFormalizations = async (exercise_id) => {
 const getAllPropositionsForExercise = async (exercise_id, user_name) => {
   try {
     const queryText =
-        'SELECT p.proposition_id, p.proposition, (SELECT s.solution FROM solutions as s LEFT JOIN users as u ON s.user_id = u.github_id   WHERE s.proposition_id = p.proposition_id AND u.user_name = $2 ORDER BY date DESC LIMIT 1) FROM propositions as p WHERE p.exercise_id = $1 ORDER BY p.proposition_id';
+        'SELECT p.proposition_id, p.proposition, (SELECT s.solution FROM solutions as s LEFT JOIN users as u ON s.user_id = u.github_id   WHERE s.proposition_id = p.proposition_id AND u.user_name = $2 ORDER BY date DESC LIMIT 1) FROM propositions as p WHERE p.exercise_id = $1 ORDER BY p.proposition_id;'
     const res = await pool.query(
       queryText,
       [ exercise_id, user_name ]
@@ -121,7 +126,7 @@ const getAllPropositionsForExercise = async (exercise_id, user_name) => {
 const getAllFormalizationsForProposition = async (proposition_id) => {
   try {
     const queryText =
-      'SELECT * FROM formalizations WHERE proposition_id = $1';
+      'SELECT * FROM formalizations WHERE proposition_id = $1;';
     const res = await pool.query(
       queryText,
       [ proposition_id ]
@@ -142,7 +147,8 @@ const getUsersByExerciseId = async (exercise_id) => {
   try {
     const queryText =
         'SELECT DISTINCT(u.user_name), COUNT(DISTINCT(p.proposition_id))  filter (where s.is_correct = TRUE) as solved, COUNT(DISTINCT(p.proposition_id)) as all,  COUNT(s.is_correct)  filter (where s.is_correct = TRUE) as successful_attempts, COUNT(p.exercise_id) as attempts, p.exercise_id FROM solutions as s INNER JOIN propositions as p ON p.proposition_id = s.proposition_id INNER JOIN users as u ON u.github_id = s.user_id WHERE p.exercise_id = $1 GROUP BY u.user_name, p.exercise_id';
-    ;
+
+    await pool.query('BEGIN;');
     const res = await pool.query(
       queryText,
       [ exercise_id ]
