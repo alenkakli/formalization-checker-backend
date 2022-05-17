@@ -16,6 +16,7 @@ const evaluate = require('../../helpers/evaluate');
 const {json} = require("express");
 const jwt = require('jsonwebtoken');
 const e = require("express");
+const pool = require("../../db/db");
 
 const authenticateJWT = (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -40,16 +41,20 @@ router.post('/', authenticateJWT, async (req, res) => {
       return;
     }
     let exercise = req.body;
+    await pool.query('BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED;');
     if (checkExercise(exercise)) {
       await saveExercise(exercise);
     } else {
+      await pool.query('ROLLBACK;');
       res.sendStatus(400);
       return;
     }
 
+    await pool.query('COMMIT;');
     res.status(201).json(exercise);
     
   } catch (err) {
+    await pool.query('ROLLBACK;');
     console.error(err.message);
     res.sendStatus(503);
   }
@@ -58,15 +63,17 @@ router.post('/', authenticateJWT, async (req, res) => {
 router.get('/', authenticateJWT , async (req, res) => {
   try {
 
+    await pool.query('BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED;');
     const previews = await getExercisePreviews();
 
     if (!previews) {
       res.sendStatus(404);
       return;
     }
-
+    await pool.query('COMMIT;');
     res.status(200).json(previews);
   } catch (err) {
+    await pool.query('ROLLBACK;');
     console.error(err.message);
     res.sendStatus(503);
   }
@@ -74,15 +81,17 @@ router.get('/', authenticateJWT , async (req, res) => {
 
 router.get('/allUsers/:user_name', authenticateJWT , async (req, res) => {
   try {
-     const  user  = req.params.user_name;
+    const  user  = req.params.user_name;
+    await pool.query('BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED ;');
     const users = await getAllUsers(user);
+    await pool.query('COMMIT;');
     if (!users) {
       res.sendStatus(404);
       return;
     }
-
     res.status(200).json(users);
   } catch (err) {
+    await pool.query('ROLLBACK;');
     console.error(err.message);
     res.sendStatus(503);
   }
@@ -95,11 +104,14 @@ router.post('/allUsers', authenticateJWT , async (req, res) => {
       res.sendStatus(404);
       return;
     }
+    await pool.query('BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED ;');
     for(let [key, value] of Object.entries(users)){
       await updateAdmins(key, value);
     }
+    await pool.query('COMMIT;');
     res.status(200).json(users);
   } catch (err) {
+    await pool.query('ROLLBACK;');
     console.error(err.message);
     res.sendStatus(503);
   }
@@ -113,10 +125,13 @@ router.post('/edit', authenticateJWT , async (req, res) => {
       return;
     }
 
+    await pool.query('BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ ;');
     await updateExercise(exercise);
+    await pool.query('COMMIT;');
 
     res.status(200).json(exercise);
   } catch (err) {
+    await pool.query('ROLLBACK;');
     console.error(err.message);
     res.sendStatus(503);
   }
@@ -130,10 +145,13 @@ router.post('/edit/remove', authenticateJWT , async (req, res) => {
       return;
     }
 
+    await pool.query('BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ ;');
     await removeExercise(exercise);
+    await pool.query('COMMIT;');
 
     res.status(200).json(exercise);
   } catch (err) {
+    await pool.query('ROLLBACK;');
     console.error(err.message);
     res.sendStatus(503);
   }
@@ -149,15 +167,18 @@ router.post('/:exercise_id', authenticateJWT, async (req, res) => {
       return;
     }
 
+    await pool.query('BEGIN TRANSACTION ISOLATION LEVEL SERIALIZABLE ;');
     const exercise = await getExerciseByID(exercise_id, user_name);
+    await pool.query('COMMIT;');
+
     if (!exercise) {
       res.sendStatus(404);
       return;
     }
-    
     res.status(200).json(exercise);
 
   } catch (err) {
+    await pool.query('ROLLBACK;');
     console.error(err.message);
     res.sendStatus(503);
   }
@@ -175,10 +196,15 @@ router.get('/progress/:exercise_id', authenticateJWT, async (req, res) => {
       res.sendStatus(404).end();
       return;
     }
+
+    await pool.query('BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED ;');
     const users = await getUsersByExerciseId(parsed_exercise_id);
+    await pool.query('COMMIT;');
+
     res.status(200).json(users);
 
   } catch (err) {
+    await pool.query('ROLLBACK;');
     console.error(err.message);
     res.sendStatus(503);
   }
@@ -196,10 +222,15 @@ router.get('/edit/:exercise_id', authenticateJWT, async (req, res) => {
       res.sendStatus(404).end();
       return;
     }
+
+    await pool.query('BEGIN TRANSACTION ISOLATION LEVEL SERIALIZABLE ;');
     const exercise = await getExerciseByIDWithFormalizations(parsed_exercise_id);
+    await pool.query('COMMIT;');
+
     res.status(200).json(exercise);
 
   } catch (err) {
+    await pool.query('ROLLBACK;');
     console.error(err.message);
     res.sendStatus(503);
   }
@@ -219,10 +250,14 @@ router.get('/progress/user/:user_name/:exercise_id', authenticateJWT, async (req
       return;
     }
 
+    await pool.query('BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED;');
     const solutions = await getUserSolutions(user_name, parsed_exercise_id);
+    await pool.query('COMMIT;');
+
     res.status(200).json(solutions);
 
   } catch (err) {
+    await pool.query('ROLLBACK;');
     console.error(err.message);
     res.sendStatus(503);
   }
@@ -232,6 +267,8 @@ router.post('/:exercise_id/:proposition_id', authenticateJWT, async (req, res) =
   try {
     let { exercise_id, proposition_id } = req.params;
     let { solution, user } = req.body;
+
+    await pool.query('BEGIN TRANSACTION ISOLATION LEVEL SERIALIZABLE ;');
     let user_id = await getUserId(user);
     user_id = user_id[0].github_id;
     exercise_id = parseInt(exercise_id, 10);
@@ -244,6 +281,8 @@ router.post('/:exercise_id/:proposition_id', authenticateJWT, async (req, res) =
 
     const formalizations = await getAllFormalizationsForProposition(proposition_id);
     const exercise = await getExerciseByID(exercise_id);
+    await pool.query('COMMIT;');
+
     if (!formalizations || !exercise || formalizations.length === 0) {
       console.error('Missing exercise or formalizations. Cannot evaluate.');
       res.sendStatus(404);
@@ -272,6 +311,7 @@ router.post('/:exercise_id/:proposition_id', authenticateJWT, async (req, res) =
       res.sendStatus(400);
     }
   } catch (err) {
+    await pool.query('ROLLBACK;');
     console.error(err.message);
     res.sendStatus(503);
   }
@@ -317,8 +357,12 @@ router.post('/logIn/github/auth' , async (req, res) => {
       }, async function (error, response, body) {
         body = JSON.parse(body);
         if (body.id !== undefined) {
+
+          await pool.query('BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED;');
           await saveUser(body.id, body.login);
           let user = await getUser(body.login);
+          await pool.query('COMMIT;');
+
           const token = generateAccessToken({username: user[0].user_name, isAdmin: user[0].is_admin});
           res.status(200).json({"token": token});
         }
@@ -326,6 +370,7 @@ router.post('/logIn/github/auth' , async (req, res) => {
     });
 
   } catch (err) {
+    await pool.query('ROLLBACK;');
     console.error(err.message);
     res.sendStatus(500);
   }
