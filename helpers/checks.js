@@ -3,14 +3,13 @@ const {
   parsePredicates,
   parseFunctions,
   parseFormulaWithPrecedence
-} = require('@fmfi-uk-1-ain-412/js-fol-parser');
+} = require("@fmfi-uk-1-ain-412/js-fol-parser");
 
 const getLanguage = (exercise) => {
   constants = parseConstants(exercise.constants);
   predicates = parsePredicates(exercise.predicates);
   functions = parseFunctions(exercise.functions);
   constraint = exercise.constraints;
-
   if (containsDuplicates(constants)
       || containsDuplicates(predicates.map(x => x.name))
       || containsDuplicates(functions.map(x => x.name))) {
