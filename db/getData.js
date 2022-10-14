@@ -145,7 +145,7 @@ const getAllFormalizationsForProposition = async (proposition_id, client) => {
 const getUsersByExerciseId = async (exercise_id, client) => {
   try {
     const queryText =
-        'SELECT DISTINCT(u.user_name),' +
+        'SELECT DISTINCT ON(u.user_name) u.user_name,' +
         '        COUNT(DISTINCT(p.proposition_id)) filter (where s.is_correct = TRUE) as solved,' +
         '        COUNT(DISTINCT(p.proposition_id)) filter (where s.is_correct = TRUE OR s.is_correct = FALSE) as attempted,' +
         '         COUNT(DISTINCT(p.proposition_id)) as all,' +
@@ -158,8 +158,8 @@ const getUsersByExerciseId = async (exercise_id, client) => {
         '        FROM solutions as s INNER JOIN propositions as p ON p.proposition_id = s.proposition_id' +
         '        INNER JOIN users as u ON u.github_id = s.user_id' +
         '        INNER JOIN' +
-        '            (SELECT date, proposition_id, is_correct FROM' +
-        '            solutions ORDER BY date DESC LIMIT 1) as a on a.proposition_id = s.proposition_id' +
+        '        (SELECT distinct on(proposition_id) proposition_id, date, is_correct FROM' +
+        '            solutions ORDER BY proposition_id, date DESC) as a on a.proposition_id = s.proposition_id' +
         '         WHERE p.exercise_id = $1' +
         '        GROUP BY u.user_name, p.exercise_id, s.proposition_id, a.is_correct, a.date, a.proposition_id;'
 
@@ -170,6 +170,7 @@ const getUsersByExerciseId = async (exercise_id, client) => {
     return res.rows;
 
   } catch (err) {
+    console.log(err)
     return null;
   }
 };

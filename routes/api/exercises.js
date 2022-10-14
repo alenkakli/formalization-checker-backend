@@ -45,7 +45,7 @@ router.post('/', authenticateJWT, async (req, res) => {
       client.query('BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED;', async err => {
         if (checkExercise(exercise)) {
           await saveExercise(exercise, client);
-          client.query('COMMIT;', err => {
+          await client.query('COMMIT;', err => {
             if (err) {
               console.error('Error committing transaction', err.stack)
             }
@@ -313,9 +313,9 @@ router.get('/progress/:exercise_id', authenticateJWT, async (req, res) => {
         return;
       }
 
-      client.query('BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED;', async err => {
+      await client.query('BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED;', async err => {
         const users = await getUsersByExerciseId(parsed_exercise_id, client);
-        client.query('COMMIT;', err => {
+        await client.query('COMMIT;', err => {
           if (err) {
             console.error('Error committing transaction', err.stack)
           }
@@ -326,7 +326,7 @@ router.get('/progress/:exercise_id', authenticateJWT, async (req, res) => {
       })
 
     } catch (err) {
-      client.query('ROLLBACK;', err => {
+      await client.query('ROLLBACK;', err => {
         if (err) {
           console.error('Error rolling back client', err.stack)
         }
@@ -421,7 +421,7 @@ router.post('/:exercise_id/:proposition_id', authenticateJWT, async (req, res) =
       let {exercise_id, proposition_id} = req.params;
       let {solution, user} = req.body;
 
-      client.query('BEGIN TRANSACTION ISOLATION LEVEL SERIALIZABLE;', async err => {
+      await client.query('BEGIN TRANSACTION ISOLATION LEVEL SERIALIZABLE;', async err => {
         let user_id = await getUserId(user);
         user_id = user_id[0].github_id;
         exercise_id = parseInt(exercise_id, 10);
@@ -431,7 +431,7 @@ router.post('/:exercise_id/:proposition_id', authenticateJWT, async (req, res) =
             if (err) {
               console.error('Error rolling back client', err.stack)
             }
-            done()
+            // done()
           })
           console.error('URL parameters are not numbers.');
           res.sendStatus(400);
@@ -447,7 +447,7 @@ router.post('/:exercise_id/:proposition_id', authenticateJWT, async (req, res) =
             if (err) {
               console.error('Error rolling back client', err.stack)
             }
-            done()
+            // done()
           })
           console.error('Missing exercise or formalizations. Cannot evaluate.');
           res.sendStatus(404);
@@ -458,7 +458,7 @@ router.post('/:exercise_id/:proposition_id', authenticateJWT, async (req, res) =
             if (err) {
               console.error('Error rolling back client', err.stack)
             }
-            done()
+            // done()
           })
           console.error('Missing log in user');
           res.sendStatus(404);
@@ -476,36 +476,39 @@ router.post('/:exercise_id/:proposition_id', authenticateJWT, async (req, res) =
           }
 
           await evaluate(solution, formalizations, exercise, res, saveSolutionWithResult);
-          client.query('COMMIT;', err => {
+          await client.query('COMMIT;', err => {
             if (err) {
               console.error('Error committing transaction', err.stack)
             }
-            done()
+            // done()
           })
         } catch (err) {
-          client.query('ROLLBACK;', err => {
+          await client.query('ROLLBACK;', err => {
             if (err) {
               console.error('Error rolling back client', err.stack)
             }
-            done()
+            // done()
           })
           res.sendStatus(400);
         }
       })
     } catch (err) {
-      client.query('ROLLBACK;', err => {
+      await client.query('ROLLBACK;', err => {
         if (err) {
           console.error('Error rolling back client', err.stack)
         }
-        done()
+        // done()
       })
       console.error(err.message);
       res.sendStatus(503);
     }
+    finally {
+      done()
+    }
   })
 });
 
-router.post('/logIn',  async (req, res) => {
+router.post('/authentication/logIn/admin',  async (req, res) => {
   try {
     let data = req.body;
      if (data.username === ADMIN_NAME && data.password === ADMIN_PASSWORD) {
