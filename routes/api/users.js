@@ -1,38 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const { TOKEN_SECRET } = require('../../config');
-const { checkExercise } = require('../../helpers/checks');
-const { saveExercise, saveSolution, saveUser, updateAdmins, updateExercise, removeExercise } = require('../../db/saveData');
-const { getUserId, getUser, getUserSolutions, getAllUsers, getExerciseByIDWithFormalizations } = require('../../db/getData');
+const pool = require("../../db/db");
+const { saveUser, updateAdmins } = require('../../db/saveData');
+const { getUser, getAllUsers } = require('../../db/getData');
 const { ADMIN_NAME, ADMIN_PASSWORD, CLIENT_ID, CLIENT_SECRET } = require('../../config');
 const request = require('request');
-const {
-    getExercisePreviews, getExerciseByID,
-    getAllFormalizationsForProposition,
-    getUsersByExerciseId
-} = require('../../db/getData');
-const evaluate = require('../../helpers/evaluate');
-const {json} = require("express");
-const jwt = require('jsonwebtoken');
-const e = require("express");
-const pool = require("../../db/db");
+const {authenticateJWT, generateAccessToken} = require('../../helpers/auth');
 
-const authenticateJWT = (req, res, next) => {
-    const authHeader = req.headers.authorization;
-    if (authHeader) {
-        const token = authHeader.split(' ')[1];
-        jwt.verify(token, TOKEN_SECRET, (err, user) => {
-            if (err) {
-                return res.sendStatus(403);
-            }
-            req.user = user;
-            next();
-        });
-    } else {
-        res.sendStatus(401);
-    }
-};
-
+// todo najskor zisti ci je admin
 router.post('/allUsers', authenticateJWT , async (req, res) => {
     await pool.connect(async (err, client, done) => {
         try {
@@ -103,8 +78,7 @@ router.get('/allUsers/:user_name', authenticateJWT , async (req, res) => {
     })
 });
 
-
-router.post('/authentication/logIn/admin',  async (req, res) => {
+router.post('/login',  async (req, res) => {
     try {
         let data = req.body;
         if (data.username === ADMIN_NAME && data.password === ADMIN_PASSWORD) {
@@ -122,7 +96,7 @@ router.post('/authentication/logIn/admin',  async (req, res) => {
     }
 });
 
-router.post('/logIn/github/auth' , async (req, res) => {
+router.post('/login/github/auth' , async (req, res) => {
     await pool.connect(async (err, client, done) => {
         try {
             request.post({
@@ -172,3 +146,5 @@ router.post('/logIn/github/auth' , async (req, res) => {
         }
     })
 });
+
+module.exports = router;

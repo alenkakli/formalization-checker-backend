@@ -11,10 +11,11 @@ server.use(cookieParser());
 server.use(cors());
 server.use(express.json());
 
-// todo rename ?
 server.use('/api/exercises', require('./routes/api/exercises'));
+server.use('/api/progress', require('./routes/api/progress'));
+server.use('/api/users', require('./routes/api/users'));
 
-server.use(jwt({ secret: TOKEN_SECRET, algorithms: ['HS256']}).unless({path: ['/logIn', '/logIn/github/auth']}));
+server.use(jwt({ secret: TOKEN_SECRET, algorithms: ['HS256']}).unless({path: ['/api/exercises/logIn', '/api/exercises/logIn/github/auth']}));
 
 server.listen(PORT, () => {
   console.log(`Server started listening on port ${PORT}`);

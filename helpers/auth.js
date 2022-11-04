@@ -15,3 +15,15 @@ const authenticateJWT = (req, res, next) => {
         res.sendStatus(401);
     }
 };
+
+function generateAccessToken(user) {
+    let oneDay = 24* 3600 * 30;
+    return jwt.sign(user, TOKEN_SECRET, { expiresIn: oneDay + 's' });
+}
+
+function isAdmin(token) {
+    let t = JSON.parse(Buffer.from(token.split(" ")[1].split(".")[1], "base64").toString());
+    return t.isAdmin;
+}
+
+module.exports = { authenticateJWT, generateAccessToken, isAdmin }

@@ -9,6 +9,7 @@ const getExercisePreviews = async (client) => {
     return res.rows;
     
   } catch (err) {
+    console.error(err);
     return null;
   }
 };

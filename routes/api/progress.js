@@ -1,30 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const { TOKEN_SECRET } = require('../../config');
-const { getUserId, getUser, getUserSolutions, getAllUsers, getExerciseByIDWithFormalizations } = require('../../db/getData');
-const {
-    getExercisePreviews, getExerciseByID,
-    getAllFormalizationsForProposition,
-    getUsersByExerciseId
-} = require('../../db/getData');
-const jwt = require('jsonwebtoken');
 const pool = require("../../db/db");
+const { getUserSolutions } = require('../../db/getData');
+const { getUsersByExerciseId } = require('../../db/getData');
+const {authenticateJWT, isAdmin} = require('../../helpers/auth');
 
-const authenticateJWT = (req, res, next) => {
-    const authHeader = req.headers.authorization;
-    if (authHeader) {
-        const token = authHeader.split(' ')[1];
-        jwt.verify(token, TOKEN_SECRET, (err, user) => {
-            if (err) {
-                return res.sendStatus(403);
-            }
-            req.user = user;
-            next();
-        });
-    } else {
-        res.sendStatus(401);
-    }
-};
 
 router.get('/progress/:exercise_id', authenticateJWT, async (req, res) => {
     await pool.connect(async (err, client, done) => {
@@ -65,7 +45,6 @@ router.get('/progress/:exercise_id', authenticateJWT, async (req, res) => {
     })
 });
 
-
 router.get('/progress/user/:user_name/:exercise_id', authenticateJWT, async (req, res) => {
     await pool.connect(async (err, client, done) => {
         try {
@@ -104,3 +83,5 @@ router.get('/progress/user/:user_name/:exercise_id', authenticateJWT, async (req
         }
     })
 });
+
+module.exports = router;
