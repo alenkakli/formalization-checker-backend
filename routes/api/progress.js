@@ -1,20 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const pool = require("../../db/db");
-const { getUserSolutions } = require('../../db/getData');
-const { getUsersByExerciseId } = require('../../db/getData');
-const {authenticateJWT, isAdmin} = require('../../helpers/auth');
+const { getUsersByExerciseId, getUserSolutions } = require('../../db/users');
+const { isAdmin, authAdmin } = require('../../helpers/auth');
 
-
-router.get('/progress/:exercise_id', authenticateJWT, async (req, res) => {
+router.get('/:exercise_id', authAdmin, async (req, res) => {
     await pool.connect(async (err, client, done) => {
         try {
-            if (!isAdmin(req.headers.authorization)) {
-                res.sendStatus(403);
-                return;
-            }
             const {exercise_id} = req.params;
             const parsed_exercise_id = parseInt(exercise_id, 10);
+
             if (isNaN(parsed_exercise_id)) {
                 res.sendStatus(404).end();
                 return;
@@ -45,15 +40,16 @@ router.get('/progress/:exercise_id', authenticateJWT, async (req, res) => {
     })
 });
 
-router.get('/progress/user/:user_name/:exercise_id', authenticateJWT, async (req, res) => {
+router.get('/user/:user_name/:exercise_id', async (req, res) => {
     await pool.connect(async (err, client, done) => {
         try {
-            if (!isAdmin(req.headers.authorization)) {
-                res.sendStatus(403);
+            const {user_name, exercise_id} = req.params;
+
+            if (!isAdmin(req) && req.auth.username !== user_name) {
+                res.sendStatus(401);
                 return;
             }
-            const {user_name} = req.params;
-            const {exercise_id} = req.params;
+
             const parsed_exercise_id = parseInt(exercise_id, 10);
             if (isNaN(parsed_exercise_id)) {
                 res.sendStatus(404).end();

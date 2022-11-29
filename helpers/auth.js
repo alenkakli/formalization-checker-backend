@@ -1,29 +1,36 @@
 const jwt = require("jsonwebtoken");
 const {TOKEN_SECRET} = require("../config");
-const authenticateJWT = (req, res, next) => {
-    const authHeader = req.headers.authorization;
-    if (authHeader) {
-        const token = authHeader.split(' ')[1];
-        jwt.verify(token, TOKEN_SECRET, (err, user) => {
-            if (err) {
-                return res.sendStatus(403);
-            }
-            req.user = user;
-            next();
-        });
-    } else {
-        res.sendStatus(401);
-    }
-};
+
+/* Vyhodit, nahradit req.user za req.auth */
+// const authenticateJWT = (req, res, next) => {
+//     const authHeader = req.headers.authorization;
+//     const token = authHeader.split(' ')[1];
+//
+//     if (token == null) return res.sendStatus(401)
+//
+//     jwt.verify(token, TOKEN_SECRET, (err, user) => {
+//         if (err) return res.sendStatus(403);
+//
+//         req.auth = user;
+//         next();
+//     });
+// };
 
 function generateAccessToken(user) {
     let oneDay = 24* 3600 * 30;
     return jwt.sign(user, TOKEN_SECRET, { expiresIn: oneDay + 's' });
 }
 
-function isAdmin(token) {
-    let t = JSON.parse(Buffer.from(token.split(" ")[1].split(".")[1], "base64").toString());
-    return t.isAdmin;
+function isAdmin(req) {
+    return req.auth.isAdmin
 }
 
-module.exports = { authenticateJWT, generateAccessToken, isAdmin }
+/* middleware, ktory overi, ci je user admin; ak nie, vrati 403, inak zavola next() --
+   Pouzit pre tie routes, ku ktorym ma mat pristup iba admin
+ */
+const authAdmin = (req, res, next) => {
+    if (!isAdmin(req)) return res.sendStatus(401);
+    next();
+};
+
+module.exports = { generateAccessToken, isAdmin, authAdmin }

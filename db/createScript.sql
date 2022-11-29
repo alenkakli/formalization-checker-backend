@@ -3,9 +3,9 @@ DROP TABLE  IF EXISTS solutions CASCADE;
 DROP TABLE  IF EXISTS formalizations CASCADE ;
 DROP TABLE  IF EXISTS propositions CASCADE;
 DROP TABLE  IF EXISTS exercises CASCADE;
-DROP DATABASE formalization_exercises;
-
-CREATE DATABASE formalization_exercises;
+-- DROP DATABASE formalization_exercises;
+--
+-- CREATE DATABASE formalization_exercises;
 
 CREATE TABLE exercises(
     exercise_id SERIAL PRIMARY KEY,

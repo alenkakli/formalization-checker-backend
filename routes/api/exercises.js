@@ -2,22 +2,17 @@ const express = require('express');
 const router = express.Router();
 const pool = require("../../db/db");
 const { checkExercise } = require('../../helpers/checks');
-const { saveExercise, saveSolution, updateExercise, removeExercise } = require('../../db/saveData');
-const { getUserId, getExerciseByIDWithFormalizations } = require('../../db/getData');
-const {
-  getExercisePreviews, getExerciseByID,
-  getAllFormalizationsForProposition
-} = require('../../db/getData');
-const {authenticateJWT, isAdmin} = require('../../helpers/auth');
+const { getUserId } = require('../../db/users');
+const { getExerciseByID, getExerciseByIDWithFormalizations,
+  getExercisePreviews, getAllFormalizationsForProposition,
+  saveExercise, saveSolution, updateExercise, removeExercise } = require('../../db/exercises');
+const { authAdmin } = require('../../helpers/auth');
 const evaluate = require('../../helpers/evaluate');
 
-router.post('/', authenticateJWT, async (req, res) => {
+router.post('/', authAdmin, async (req, res) => {
   await pool.connect((err, client, done) => {
     try {
-      if(!isAdmin(req.headers.authorization)){
-        res.sendStatus(403);
-        return;
-      }
+
       let exercise = req.body;
       client.query('BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED;', async err => {
         if (checkExercise(exercise)) {
@@ -28,7 +23,6 @@ router.post('/', authenticateJWT, async (req, res) => {
             }
             done()
           })
-
         } else {
           client.query('ROLLBACK;', err => {
             if (err) {
@@ -55,7 +49,7 @@ router.post('/', authenticateJWT, async (req, res) => {
   })
 });
 
-router.get('/', authenticateJWT , async (req, res) => {
+router.get('/', async (req, res) => {
   await pool.connect(async (err, client, done) => {
         try {
           client.query('BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED;', async err => {
@@ -94,7 +88,7 @@ router.get('/', authenticateJWT , async (req, res) => {
   )
 });
 
-router.post('/edit', authenticateJWT , async (req, res) => {
+router.post('/edit', authAdmin, async (req, res) => {
   await pool.connect(async (err, client, done) => {
     try {
       const exercise = req.body;
@@ -127,8 +121,7 @@ router.post('/edit', authenticateJWT , async (req, res) => {
   })
 });
 
-// TODO nemal by to byt router.post ale router.delete
-router.post('/edit/remove', authenticateJWT , async (req, res) => {
+router.delete('/remove', authAdmin, async (req, res) => {
   await pool.connect(async (err, client, done) => {
     try {
       const exercise = req.body;
@@ -161,12 +154,13 @@ router.post('/edit/remove', authenticateJWT , async (req, res) => {
   })
 });
 
-router.post('/:exercise_id', authenticateJWT, async (req, res) => {
+router.post('/:exercise_id', async (req, res) => {
   await pool.connect(async (err, client, done) => {
     try {
       const {exercise_id} = req.params;
       const user_name = req.body.username;
       const parsed_exercise_id = parseInt(exercise_id, 10);
+
       if (isNaN(parsed_exercise_id)) {
         res.sendStatus(404).end();
         return;
@@ -207,15 +201,12 @@ router.post('/:exercise_id', authenticateJWT, async (req, res) => {
   })
 });
 
-router.get('/edit/:exercise_id', authenticateJWT, async (req, res) => {
+router.get('/edit/:exercise_id', authAdmin, async (req, res) => {
   await pool.connect(async (err, client, done) => {
     try {
-      if (!isAdmin(req.headers.authorization)) {
-        res.sendStatus(403);
-        return;
-      }
       const {exercise_id} = req.params;
       const parsed_exercise_id = parseInt(exercise_id, 10);
+
       if (isNaN(parsed_exercise_id)) {
         res.sendStatus(404).end();
         return;
@@ -245,7 +236,7 @@ router.get('/edit/:exercise_id', authenticateJWT, async (req, res) => {
   })
 });
 
-router.post('/:exercise_id/:proposition_id', authenticateJWT, async (req, res) => {
+router.post('/:exercise_id/:proposition_id', async (req, res) => {
   await pool.connect(async (err, client, done) => {
     try {
       let {exercise_id, proposition_id} = req.params;
@@ -271,7 +262,6 @@ router.post('/:exercise_id/:proposition_id', authenticateJWT, async (req, res) =
         const formalizations = await getAllFormalizationsForProposition(proposition_id, client);
         let exercise = await getExerciseByID(exercise_id, null,  client);
 
-
         if (!formalizations || !exercise || formalizations.length === 0) {
           await client.query('ROLLBACK;', err => {
             if (err) {
@@ -283,6 +273,7 @@ router.post('/:exercise_id/:proposition_id', authenticateJWT, async (req, res) =
           res.sendStatus(404);
           return;
         }
+
         if (isNaN(parseInt(user_id))) {
           await client.query('ROLLBACK;', err => {
             if (err) {
@@ -296,7 +287,6 @@ router.post('/:exercise_id/:proposition_id', authenticateJWT, async (req, res) =
         }
 
         try {
-
           function saveSolutionWithResult(eval_status) {
             if (eval_status.solutionToFormalization === 'OK' && eval_status.formalizationToSolution === 'OK') {
               saveSolution(user_id, proposition_id, solution, true, client);

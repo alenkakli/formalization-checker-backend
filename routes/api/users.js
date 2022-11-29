@@ -1,14 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const pool = require("../../db/db");
-const { saveUser, updateAdmins } = require('../../db/saveData');
-const { getUser, getAllUsers } = require('../../db/getData');
+const { getUser, getAllUsers, saveUser, updateAdmins } = require('../../db/users');
 const { ADMIN_NAME, ADMIN_PASSWORD, CLIENT_ID, CLIENT_SECRET } = require('../../config');
 const request = require('request');
-const {authenticateJWT, generateAccessToken} = require('../../helpers/auth');
+const { generateAccessToken, authAdmin } = require('../../helpers/auth');
 
-// todo najskor zisti ci je admin
-router.post('/allUsers', authenticateJWT , async (req, res) => {
+router.post('/', authAdmin, async (req, res) => {
     await pool.connect(async (err, client, done) => {
         try {
             const users = req.body;
@@ -41,7 +39,7 @@ router.post('/allUsers', authenticateJWT , async (req, res) => {
     })
 });
 
-router.get('/allUsers/:user_name', authenticateJWT , async (req, res) => {
+router.get('/:user_name', async (req, res) => {
     await pool.connect(async (err, client, done) => {
         try {
             const user = req.params.user_name;
@@ -96,7 +94,7 @@ router.post('/login',  async (req, res) => {
     }
 });
 
-router.post('/login/github/auth' , async (req, res) => {
+router.post('/login/github/auth', async (req, res) => {
     await pool.connect(async (err, client, done) => {
         try {
             request.post({
