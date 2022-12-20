@@ -8,11 +8,10 @@ const {
   Equivalence, ExistentialQuant, UniversalQuant
 } = require('./formula_classes');
 const LanguageToVampire = require('./language');
-const {evalWithVampire} = require('./vampire');
-const {vampire} = require("./vampire");
+const {vampire, evalWithVampire} = require('./vampire');
 
 module.exports = async function evaluate(
-    solution, formalizations, exercise, res, saveSolutionWithResult
+    solution, formalizations, exercise
 ) {
 
   let {constants, predicates, functions, constraint} = getLanguage(exercise);
@@ -58,9 +57,7 @@ module.exports = async function evaluate(
     eval_status.solutionToFormalization = await vampire(solution, formalization, 10);
     eval_status.formalizationToSolution = await vampire(formalization, solution, 10);
     if (eval_status.formalizationToSolution === "OK" && eval_status.solutionToFormalization === "OK") {
-      res.status(200).json(eval_status);
-      saveSolutionWithResult(eval_status);
-      return;
+      return eval_status;
     }
   }
 
@@ -70,7 +67,7 @@ module.exports = async function evaluate(
       constants, predicates, functions, factories
   ).toVampire();
 
-  evalWithVampire(res, solution, constraint, constraintFromProp,  formalization, saveSolutionWithResult, language, exercise);
+  return evalWithVampire(solution, constraint, constraintFromProp,  formalization, language, exercise);
 
 
 }

@@ -1,79 +1,52 @@
 const express = require('express');
 const router = express.Router();
-const pool = require("../../db/db");
 const { getUser, getAllUsers, saveUser, updateAdmins } = require('../../db/users');
 const { ADMIN_NAME, ADMIN_PASSWORD, CLIENT_ID, CLIENT_SECRET } = require('../../config');
 const request = require('request');
 const { generateAccessToken, authAdmin } = require('../../helpers/auth');
 
 router.post('/', authAdmin, async (req, res) => {
-    await pool.connect(async (err, client, done) => {
-        try {
-            const users = req.body;
-            if (!users) {
-                res.sendStatus(404);
-                return;
-            }
-            client.query('BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED;', async err => {
-                for (let [key, value] of Object.entries(users)) {
-                    await updateAdmins(key, value, client);
-                }
-                client.query('COMMIT;', err => {
-                    if (err) {
-                        console.error('Error committing transaction', err.stack)
-                    }
-                    done()
-                })
-                res.status(200).json(users);
-            });
-        } catch (err) {
-            client.query('ROLLBACK;', err => {
-                if (err) {
-                    console.error('Error rolling back client', err.stack)
-                }
-                done()
-            })
-            console.error(err.message);
-            res.sendStatus(503);
+    try {
+        const users = req.body;
+        if (!users) {
+            res.sendStatus(404);
+            return;
         }
-    })
+
+        for (let [key, value] of Object.entries(users)) {
+            await updateAdmins(key, value);
+        }
+
+        res.status(200).json(users);
+        console.log(res.rows[0]);
+
+    } catch (err) {
+        console.error(err);
+        console.error(err.stack);
+        res.sendStatus(500);
+    }
+
 });
 
 router.get('/:user_name', async (req, res) => {
-    await pool.connect(async (err, client, done) => {
-        try {
-            const user = req.params.user_name;
-            client.query('BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED;', async err => {
-                const users = await getAllUsers(user, client);
-                client.query('COMMIT;', err => {
-                    if (err) {
-                        console.error('Error committing transaction', err.stack)
-                    }
-                    done()
-                })
-                if (!users) {
-                    client.query('ROLLBACK;', err => {
-                        if (err) {
-                            console.error('Error rolling back client', err.stack)
-                        }
-                        done()
-                    })
-                    res.sendStatus(404);
-                    return;
-                }
-                res.status(200).json(users);
-            });
-        } catch (err) {
-            client.query('ROLLBACK;', err => {
-                if (err) {
-                    console.error('Error rolling back client', err.stack)
-                }
-                done()
-            })
-            console.error(err.message);
-            res.sendStatus(503);
+    try {
+        const user = req.params.user_name;
+        const users = await getAllUsers(user);
+
+        if (!users) {
+            res.sendStatus(404);
+            return;
         }
-    })
+
+        res.status(200).json(users);
+        console.log(res.rows[0]);
+
+    } catch (err) {
+        console.error(err);
+        console.error(err.stack);
+        res.sendStatus(500);
+    }
+
 });
 
 router.post('/login',  async (req, res) => {
@@ -89,20 +62,20 @@ router.post('/login',  async (req, res) => {
         }
 
     } catch (err) {
-        console.error(err.message);
-        res.sendStatus(503);
+        console.error(err);
+        console.error(err.stack);
+        res.sendStatus(500);
     }
 });
 
 router.post('/login/github/auth', async (req, res) => {
-    await pool.connect(async (err, client, done) => {
-        try {
-            request.post({
-                url: "https://github.com/login/oauth/access_token/?client_id=" + CLIENT_ID +
-                    "&client_secret=" + CLIENT_SECRET + "&code=" + req.body.code,
-                headers: {
-                    'User-Agent': 'request'
-                }
+    try {
+        request.post({
+            url: "https://github.com/login/oauth/access_token/?client_id=" + CLIENT_ID +
+                "&client_secret=" + CLIENT_SECRET + "&code=" + req.body.code,
+            headers: {
+                'User-Agent': 'request'
+            }
 
             }, function (error, response, body) {
                 request.get({
@@ -115,34 +88,20 @@ router.post('/login/github/auth', async (req, res) => {
                     body = JSON.parse(body);
                     if (body.id !== undefined) {
 
-                        client.query('BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED;', async err => {
-                                await saveUser(body.id, body.login, client);
-                                let user = await getUser(body.login, client);
-                                await client.query('COMMIT;', err => {
-                                    if (err) {
-                                        console.error('Error committing transaction', err.stack)
-                                    }
-                                    done()
-                                })
-
-                                const token = generateAccessToken({username: user[0].user_name, isAdmin: user[0].is_admin});
-                                res.status(200).json({"token": token});
-                            }
-                        )}
-                });
+                        await saveUser(body.id, body.login);
+                        let user = await getUser(body.login);
+                        const token = generateAccessToken({username: user[0].user_name, isAdmin: user[0].is_admin});
+                        res.status(200).json({"token": token});
+                    }
+                })
             });
 
-        } catch (err) {
-            client.query('ROLLBACK;', err => {
-                if (err) {
-                    console.error('Error rolling back client', err.stack)
-                }
-                done()
-            })
-            console.error(err.message);
-            res.sendStatus(500);
-        }
-    })
+    } catch (err) {
+        console.error(err);
+        console.error(err.stack);
+        res.sendStatus(500);
+    }
+
 });
 
 module.exports = router;

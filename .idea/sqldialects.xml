@@ -3,5 +3,7 @@
   <component name="SqlDialectMappings">
     <file url="file://$PROJECT_DIR$/db/createScript.sql" dialect="GenericSQL" />
     <file url="file://$PROJECT_DIR$/db/generateScript.sql" dialect="GenericSQL" />
+    <file url="file://$PROJECT_DIR$/db/progress.js" dialect="GenericSQL" />
+    <file url="PROJECT" dialect="PostgreSQL" />
   </component>
 </project>

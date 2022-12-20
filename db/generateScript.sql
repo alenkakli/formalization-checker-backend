@@ -3,7 +3,7 @@ VALUES(
        'sformalizujte',
        'No description',
        'NoConstant',
-       'chlapec/1, dievca/1, predmet/1, profesor/1, student/1, ucitel/1, vyberovy/1, absolvoval/2, kamarat/2, skolitel/2, zapisany/2, spoluziaci/2, lepsi_kamarat/3',
+       'chlapec/1, dievca/1, predmet/1, profesor/1, student/1, ucitel/1, spokojny/1, vyberovy/1, absolvoval/2, kamarat/2, skolitel/2, zapisany/2, spoluziaci/2, lepsi_kamarat/3',
        'NoFunction/1', '');
 
 INSERT INTO propositions(proposition, exercise_id)
@@ -40,14 +40,14 @@ INSERT INTO formalizations(formalization, constraints, proposition_id)
 INSERT INTO formalizations(formalization, constraints, proposition_id)
     VALUES('∀x ( ( student(x) ∧ ∃y(predmet(y) ∧ absolvoval(x, y)) ) → spokojny(x) )', '', 6);
 INSERT INTO formalizations(formalization, constraints, proposition_id)
-    VALUES('∀x ( student(x) → ∃y ∃z(¬ z ≐ y ∧ student(y) ∧ student(z) ∧ kamarat(x, y) ∧ kamarat(x, z) ∧ lepsi kamarat(x, y, z) ∧ ¬ z ≐ x ∧ ¬ y ≐ x) )', '', 7);
+    VALUES('∀x ( student(x) → ∃y ∃z(¬ z ≐ y ∧ student(y) ∧ student(z) ∧ kamarat(x, y) ∧ kamarat(x, z) ∧ lepsi_kamarat(x, y, z) ∧ ¬ z ≐ x ∧ ¬ y ≐ x) )', '', 7);
 INSERT INTO formalizations(formalization, constraints, proposition_id)
     VALUES('∀x ∀y ( (student(x) ∧ skolitel(y, x)) → ∀z(skolitel(z, x) → z ≐ y) )', '', 8);
 INSERT INTO formalizations(formalization, constraints, proposition_id)
     VALUES('∀x ∀y ( (student(x) ∧ skolitel(y, x)) → ¬ ∃z(skolitel(z, x) ∧ ¬ z ≐ y) )', '', 8);
 INSERT INTO formalizations(formalization, constraints, proposition_id)
-    VALUES('∀x ( student(x) → ∀y ∀z((skolitel(y, x) ∧ skolitel(z, x)) → y ≐ z)) )', '', 8);
+    VALUES('∀x ( student(x) → ∀y ∀z( ( skolitel(y, x) ∧ skolitel(z, x) ) → y ≐ z) )', '', 8);
 INSERT INTO formalizations(formalization, constraints, proposition_id)
-    VALUES('∀x (student(x) ∧ dievca(x)) →(∃y student(y)∧dievca(y)∧spoluziaci(x,y)∧kamarat(x,y))) ∧ ¬ ∃z(lepsi kamarat(x, z, y) ∧ ¬ z ≐ y)))', '', 9);
+    VALUES('∀x ( student(x) ∧ dievca(x) →( ∃y (student(y) ∧ dievca(y) ∧ spoluziaci(x,y) ∧ kamarat(x,y) ∧ ¬ ∃z( lepsi_kamarat(x, z, y) ∧ ¬ z ≐ y ) ) ) )', '', 9);
 INSERT INTO formalizations(formalization, constraints, proposition_id)
     VALUES('¬ ∃x ∃y(predmet(y) ∧ vyberovy(y) ∧ zapisany(x, y))', '', 10);
