@@ -2,8 +2,28 @@ const express = require('express');
 const router = express.Router();
 const { getUsersByExerciseId, getUserSolutions } = require('../../db/progress');
 const { isAdmin, authAdmin } = require('../../helpers/auth');
+const {getExercisesByUserName} = require("../../db/progress");
 
-router.get('/:exercise_id', authAdmin, async (req, res) => {
+
+router.get('/', async (req, res) => {
+    try {
+        const user_name = req.auth.username;
+        const previews = await getExercisesByUserName(user_name);
+        if (previews === null) {
+            res.sendStatus(500);
+            return;
+        }
+
+        res.status(200).json(previews);
+
+    } catch (err) {
+        console.error(err);
+        console.error(err.stack);
+        res.sendStatus(500);
+    }
+
+});
+router.get('/:exercise_id', async (req, res) => {
     try {
         const {exercise_id} = req.params;
         const parsed_exercise_id = parseInt(exercise_id, 10);
@@ -24,9 +44,12 @@ router.get('/:exercise_id', authAdmin, async (req, res) => {
 
 });
 
-router.get('/user/:user_name/:exercise_id', async (req, res) => {
+router.get('/:exercise_id/:user_name', async (req, res) => {
+    console.log("som v progress api")
     try {
         const {user_name, exercise_id} = req.params;
+        console.log("exercise_id= " + exercise_id);
+        console.log("user_name= " + user_name);
         if (!isAdmin(req) && req.auth.username !== user_name) {
             res.sendStatus(401).end();
             return;

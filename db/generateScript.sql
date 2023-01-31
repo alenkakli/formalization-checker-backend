@@ -7,9 +7,9 @@ VALUES(
        'NoFunction/1', '');
 
 INSERT INTO propositions(proposition, exercise_id)
-VALUES('Je aspoň jeden študent, ktorý je chlapec, a jedna študentka (ktorá je teda dievča), a sú spolužiaci', 1);
+VALUES('Je aspoň jeden študent, ktorý je chlapec, a jedna študentka (ktorá je teda dievča), a sú spolužiaci.', 1);
 INSERT INTO propositions(proposition, exercise_id)
-VALUES('Učiteľ,ktorý je profesorom, musí byť školiteľom aspoň jedného študenta.', 1);
+VALUES('Učiteľ, ktorý je profesorom, musí byť školiteľom aspoň jedného študenta.', 1);
 INSERT INTO propositions(proposition, exercise_id)
 VALUES('Vzťah „byť spolužiakom“ je symetrický a tranzitívny.', 1);
 INSERT INTO propositions(proposition, exercise_id)
@@ -17,7 +17,7 @@ VALUES('Študenti a školitelia sú disjunktní.', 1);
 INSERT INTO propositions(proposition, exercise_id)
 VALUES('Študent absolvuje predmet, iba ak ho má zapísaný.', 1);
 INSERT INTO propositions(proposition, exercise_id)
-VALUES('Študent, ktorý absolvoval predmet, je spokojný.', 1);
+VALUES('Študent, ktorý absolvoval predmet, je spokojný.', 1);karkubkarkub
 INSERT INTO propositions(proposition, exercise_id)
 VALUES('Každý študent má medzi študentami aspoň dvoch kamarátov, pričom s jedným sa kamaráti viac než s tým druhým.', 1);
 INSERT INTO propositions(proposition, exercise_id)

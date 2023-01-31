@@ -7,7 +7,7 @@ function generateAccessToken(user) {
 }
 
 function isAdmin(req) {
-    return req.auth.isAdmin
+    return req.auth.isAdmin;
 }
 
 const authAdmin = (req, res, next) => {
