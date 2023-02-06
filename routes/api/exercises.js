@@ -529,22 +529,15 @@ router.post('/authentication/logIn/admin',  async (req, res) => {
 
 
 
-router.post('/logIn/github/auth' , async (req, res) => {
+router.post('/logIn/github/auth', async (req, res) => {
   await pool.connect(async (err, client, done) => {
     try {
-      request.post({
-        url: "https://github.com/login/oauth/access_token/?client_id=" + CLIENT_ID +
-            "&client_secret=" + CLIENT_SECRET + "&code=" + req.body.code,
-        headers: {
-          'User-Agent': 'request'
-        }
-
-      }, function (error, response, body) {
+      const login = (token) => {
         request.get({
           url: "https://api.github.com/user",
           headers: {
             'User-Agent': 'request',
-            'Authorization': 'token ' + body.split("&")[0].split("=")[1]
+            'Authorization': 'token ' + token
           }
         }, async function (error, response, body) {
           body = JSON.parse(body);
@@ -560,13 +553,31 @@ router.post('/logIn/github/auth' , async (req, res) => {
                 done()
               })
 
-              const token = generateAccessToken({username: user[0].user_name, isAdmin: user[0].is_admin});
-              res.status(200).json({"token": token});
+              const token = generateAccessToken({ username: user[0].user_name, isAdmin: user[0].is_admin });
+              res.status(200).json({ "token": token });
             }
-            )}
+            )
+          }
         });
-      });
+      }
 
+      if (req.body.code !== undefined) {
+        // get token from temporary code, then login
+        request.post({
+          url: "https://github.com/login/oauth/access_token/?client_id=" + CLIENT_ID +
+            "&client_secret=" + CLIENT_SECRET + "&code=" + req.body.code,
+          headers: {
+            'User-Agent': 'request'
+          }
+
+        }, function (error, response, body) {
+          const token = body.split("&")[0].split("=")[1];
+          login(token)
+        });
+      } else if (req.body.token !== undefined) {
+        // login with token
+        login(req.body.token)
+      }
     } catch (err) {
       client.query('ROLLBACK;', err => {
         if (err) {
