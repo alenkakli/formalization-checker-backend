@@ -27,17 +27,6 @@ COPY --from=vampire-build /usr/src/vampire-build/bin/vampire .
 
 ENV PATH_TO_VAMPIRE=/usr/local/bin/vampire
 
-WORKDIR /usr/src
-
-RUN set -ex; \
-    git clone --branch tptp https://github.com/nikolakulikova/js-fol-parser.git
-
-RUN set -ex; \
-    cd js-fol-parser; \
-    npm install; \
-    npm run build; \
-    npm prune --production
-
 WORKDIR /usr/src/formalization-checker-backend
 
 COPY . .
