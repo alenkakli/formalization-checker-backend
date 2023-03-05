@@ -1,8 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const { checkExercise } = require('../../helpers/checks');
-const { getExerciseByID, getExerciseByIDWithFormalizations,
-  getExercisePreviews, saveExercise, updateExercise, removeExercise,
+const {
+  getExerciseByID, getExerciseByIDWithFormalizations, getExercisePreviews,
+  getBadExercises, getBadPropositionsToExercise, getBadFormalizationsToProposition,
+  saveExercise, updateExercise, removeExercise,
   evaluateResult, UserException, ExerciseException } = require('../../db/exercises');
 const { authAdmin } = require('../../helpers/auth');
 
@@ -155,6 +157,74 @@ router.post('/:exercise_id/:proposition_id', async (req, res) => {
     if (err instanceof ExerciseException) {
       res.sendStatus(404);
     }
+    console.error(err);
+    console.error(err.stack);
+    res.sendStatus(500);
+  }
+
+});
+
+router.get('/bad_formalizations', async (req, res) => {
+  try {
+    const exercises = await getBadExercises();
+    if (exercises === null) {
+      res.sendStatus(500);
+      return;
+    }
+    res.status(200).json(exercises);
+
+  } catch (err) {
+    console.error(err);
+    console.error(err.stack);
+    res.sendStatus(500);
+  }
+
+});
+router.get('/bad_formalizations/:exercise_id', async (req, res) => {
+  try {
+    let {exercise_id} = req.params;
+    exercise_id = parseInt(exercise_id, 10);
+    if (isNaN(exercise_id)) {
+      console.error('URL parameters are not numbers.');
+      res.sendStatus(400);
+      return;
+    }
+
+    const propositions = await getBadPropositionsToExercise(exercise_id);
+    if (propositions === null) {
+      res.sendStatus(500);
+      return;
+    }
+
+    res.status(200).json(propositions);
+
+  } catch (err) {
+    console.error(err);
+    console.error(err.stack);
+    res.sendStatus(500);
+  }
+
+});
+
+router.get('/bad_formalizations/:exercise_id/:proposition_id', async (req, res) => {
+  try {
+    let {exercise_id, proposition_id} = req.params;
+    exercise_id = parseInt(exercise_id, 10);
+    proposition_id = parseInt(proposition_id, 10);
+    if (isNaN(exercise_id) || isNaN(proposition_id)) {
+      console.error('URL parameters are not numbers.');
+      res.sendStatus(400);
+      return;
+    }
+
+    const formalizations = await getBadFormalizationsToProposition(proposition_id);
+    if (formalizations === null) {
+      res.sendStatus(500);
+      return;
+    }
+    res.status(200).json(formalizations);
+
+  } catch (err) {
     console.error(err);
     console.error(err.stack);
     res.sendStatus(500);

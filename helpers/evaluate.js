@@ -3,8 +3,9 @@ const {LanguageToVampire} = require('./language');
 const {vampire, evalWithVampire} = require('./vampire');
 
 module.exports = async function evaluate(
-    solution, formalizations, exercise
+    solution, formalizations, exercise, migration
 ) {
+  //todo pomazat
 
   let {constraint} = getLanguage(exercise);
   let language = new LanguageToVampire();
@@ -47,6 +48,8 @@ module.exports = async function evaluate(
       return eval_status;
     }
   }
+
+  if (migration === true)   return eval_status;
 
   // call first saved formalization in case solution is not correct with none of saved solution
   formalization = formulaToVampire(formalizations[0].formalization);
