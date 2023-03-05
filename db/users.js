@@ -19,21 +19,11 @@ const getUser= async (user_login) => {
 };
 
 const _getUserId = async (user_login, client) => {
-    try {
-        await client.query('BEGIN TRANSACTION ISOLATION LEVEL SERIALIZABLE')
+    const queryText =
+        'SELECT github_id FROM users WHERE user_name=$1;'
+    const res = await client.query(queryText, [user_login]);
 
-        const queryText =
-            'SELECT github_id FROM users WHERE user_name=$1;'
-        const res = await client.query(queryText, [user_login]);
-
-        await client.query('COMMIT')
-
-        return res.rows;
-    } catch (e) {
-        await client.query('ROLLBACK');
-        throw e
-    }
-
+    return res.rows;
 };
 
 const getAllUsers = async (user) => {

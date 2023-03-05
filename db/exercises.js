@@ -29,23 +29,18 @@ const getExerciseByID = async (exercise_id, user_name) => {
 };
 
 const _getExerciseByID = async (exercise_id, user_name, client) => {
-    try {
-        const queryText =
-            'SELECT * FROM exercises WHERE exercise_id = $1;'
-        const res = await client.query(queryText, [exercise_id]);
+    const queryText =
+        'SELECT * FROM exercises WHERE exercise_id = $1;'
+    const res = await client.query(queryText, [exercise_id]);
 
-        let propositions = await _getAllPropositionsForExercise(exercise_id, user_name, client);
-        if (res.rows.length !== 1 || !propositions) {
-            return null;
-        }
-        let exercise = res.rows[0];
-        exercise.propositions = propositions;
-
-        return exercise;
-    } catch (e) {
-        throw e
+    let propositions = await _getAllPropositionsForExercise(exercise_id, user_name, client);
+    if (res.rows.length !== 1 || !propositions) {
+        return null;
     }
+    let exercise = res.rows[0];
+    exercise.propositions = propositions;
 
+    return exercise;
 };
 
 const getExerciseByIDWithFormalizations = async (exercise_id) => {
@@ -102,19 +97,18 @@ const getExercisePreviews = async () => {
 };
 
 const _getAllPropositionsForExercise = async (exercise_id, user_name, client) => {
-    try {
-        const queryText =
-            `SELECT p.proposition_id, p.proposition,
-                    (SELECT s.solution FROM solutions as s
-                                                LEFT JOIN users as u ON s.user_id = u.github_id
-                     WHERE s.proposition_id = p.proposition_id AND u.user_name = $2
-                     ORDER BY date DESC LIMIT 1)
-             FROM propositions as p WHERE p.exercise_id = $1 ORDER BY p.proposition_id;`
-        const res = await client.query( queryText, [ exercise_id, user_name ] );
+    const queryText =
+        `SELECT p.proposition_id, p.proposition,
+                (SELECT s.solution FROM solutions as s
+                    LEFT JOIN users as u ON s.user_id = u.github_id
+                 WHERE s.proposition_id = p.proposition_id AND u.user_name = $2
+                 ORDER BY date DESC LIMIT 1)
+         FROM propositions as p WHERE p.exercise_id = $1 ORDER BY p.proposition_id;`
+    const res = await client.query( queryText, [ exercise_id, user_name ] );
 
-        if (res.rows.length === 0) {
-            return null;
-        }
+    if (res.rows.length === 0) {
+        return null;
+    }
 
         return res.rows;
 
@@ -178,41 +172,29 @@ const saveExercise = async (
 };
 
 const _saveProposition = async (exerciseID, { proposition, formalizations, constraints }, client) => {
-    try {
-        const queryText =
-            `INSERT INTO propositions(proposition, exercise_id)
-            VALUES($1, $2) RETURNING proposition_id;`
-        const res = await client.query(
-            queryText,
-            [ proposition, exerciseID ]
-        );
+    const queryText =
+        `INSERT INTO propositions(proposition, exercise_id)
+        VALUES($1, $2) RETURNING proposition_id;`
+    const res = await client.query(
+        queryText,
+        [ proposition, exerciseID ]
+    );
 
-        const propositionID = res.rows[0].proposition_id;
+    const propositionID = res.rows[0].proposition_id;
 
-        for(let i = 0; i < formalizations.length; i++){
-            _saveFormalization(propositionID, formalizations[i], constraints[i], client);
-        }
-
-    } catch (e) {
-        await client.query('ROLLBACK');
-        throw e
+    for(let i = 0; i < formalizations.length; i++){
+        await _saveFormalization(propositionID, formalizations[i], constraints[i], client);
     }
 };
 
 const _saveFormalization = async (propositionID, formalization, constraint, client) => {
-    try {
-        const queryText =
-            `INSERT INTO formalizations(formalization, constraints, proposition_id)
-            VALUES($1, $2, $3);`
-        await client.query(
-            queryText,
-            [ formalization, constraint, propositionID ]
-        );
-
-    } catch (e) {
-        await client.query('ROLLBACK');
-        throw e
-    }
+    const queryText =
+        `INSERT INTO formalizations(formalization, constraints, proposition_id)
+        VALUES($1, $2, $3);`
+    await client.query(
+        queryText,
+        [ formalization, constraint, propositionID ]
+    );
 };
 
 const _saveSolution = async (studentID, propositionID, studentSolution, correctSolution, client) => {
@@ -245,7 +227,8 @@ const updateExercise = async (exercise) => {
              WHERE  exercise_id = $1;`
         await client.query(
             queryText,
-            [ exercise.id, exercise.title, exercise.description, exercise.constants, exercise.predicates, exercise.functions, exercise.constraint,]
+            [ exercise.id, exercise.title, exercise.description, exercise.constants,
+                exercise.predicates, exercise.functions, exercise.constraint ]
         );
 
         await _removeProposition(exercise.id, client);
@@ -273,7 +256,7 @@ const removeExercise = async (exercise) => {
             'DELETE FROM exercises WHERE exercise_id = $1;'
         await client.query(
             queryText,
-            [ exercise.id]
+            [ exercise.id ]
         );
     } catch (e) {
         await client.query('ROLLBACK');
@@ -284,18 +267,14 @@ const removeExercise = async (exercise) => {
 };
 
 const _removeProposition = async (exercise_id, client) => {
-    try {
-        const queryText =
-            'DELETE FROM propositions WHERE exercise_id = $1;'
-        await client.query(
-            queryText,
-            [ exercise_id]
-        );
-    } catch (e) {
-        await client.query('ROLLBACK');
-        throw e
-    }
+    const queryText =
+        'DELETE FROM propositions WHERE exercise_id = $1;'
+    await client.query(
+        queryText,
+        [ exercise_id ]
+    );
 };
+
 const evaluateResult = async (user, exercise_id, proposition_id, solution) => {
     const client = await pool.connect();
     try {

@@ -45,11 +45,8 @@ router.get('/:exercise_id', async (req, res) => {
 });
 
 router.get('/:exercise_id/:user_name', async (req, res) => {
-    console.log("som v progress api")
     try {
         const {user_name, exercise_id} = req.params;
-        console.log("exercise_id= " + exercise_id);
-        console.log("user_name= " + user_name);
         if (!isAdmin(req) && req.auth.username !== user_name) {
             res.sendStatus(401).end();
             return;
