@@ -2,9 +2,9 @@ const express = require('express');
 const router = express.Router();
 const { checkExercise } = require('../../helpers/checks');
 const {
-  getExerciseByID, getExerciseByIDWithFormalizations, getExercisePreviews,
-  getBadExercises, getBadPropositionsToExercise, getBadFormalizationsToProposition,
-  saveExercise, updateExercise, removeExercise,
+  getExerciseByID, getExerciseByIDWithFormalizations, getExercisePreviews, getFeedbacksToProposition,
+  getBadExercises, getBadPropositionsToExercise, getBadFormalizationsToProposition, getFeedbacksToBadFormalization,
+  saveFeedback, saveExercise, updateExercise, removeExercise,
   evaluateResult, UserException, ExerciseException } = require('../../db/exercises');
 const { authAdmin } = require('../../helpers/auth');
 
@@ -217,12 +217,61 @@ router.get('/bad_formalizations/:exercise_id/:proposition_id', async (req, res) 
       return;
     }
 
-    const formalizations = await getBadFormalizationsToProposition(proposition_id);
+    const formalizations = await getBadFormalizationsToProposition(exercise_id, proposition_id);
     if (formalizations === null) {
       res.sendStatus(500);
       return;
     }
+
     res.status(200).json(formalizations);
+
+  } catch (err) {
+    console.error(err);
+    console.error(err.stack);
+    res.sendStatus(500);
+  }
+
+});
+
+router.post('/bad_formalizations/:exercise_id/:proposition_id', authAdmin, async (req, res) => {
+  try {
+    // todo pomazat
+    // console.log("\nsave feedback api")
+
+    let user = req.auth.username;
+    let {bad_formalization_id, feedback} = req.body;
+    bad_formalization_id = parseInt(bad_formalization_id, 10);
+
+    await saveFeedback(user, bad_formalization_id, feedback.value);
+
+    res.status(200);
+
+  } catch (err) {
+    console.error(err);
+    console.error(err.stack);
+    res.sendStatus(500);
+  }
+
+});
+
+
+router.get('/bad_formalizations/feedback/:bad_formalization_id', async (req, res) => {
+  try {
+    console.log("/bad_formalizations/feedback/:bad_formalization_id")
+    let {bad_formalization_id} = req.params;
+    bad_formalization_id = parseInt(bad_formalization_id, 10);
+    console.log(bad_formalization_id)
+    if (isNaN(bad_formalization_id)) {
+      console.error('URL parameters are not numbers.');
+      res.sendStatus(400);
+      return;
+    }
+
+    const feedbacks = await getFeedbacksToBadFormalization(bad_formalization_id);
+
+    console.log("feedbacks")
+    console.log(feedbacks)
+    res.status(200).json(feedbacks);
 
   } catch (err) {
     console.error(err);

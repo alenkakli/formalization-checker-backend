@@ -18,11 +18,13 @@ CREATE TABLE feedbacks(
     ON DELETE CASCADE
 );
 
-CREATE TABLE feedback_ratings(
+CREATE TABLE feedback_to_solution(
     id SERIAL PRIMARY KEY,
     feedback_id INTEGER NOT NULL,
     solution_id INTEGER NOT NULL,
-    rating INTEGER,
+    rating INTEGER NOT NULL check (rating between -1 and 1),
+    showed timestamp NOT NULL,
+    rated timestamp NOT NULL,
     FOREIGN KEY (feedback_id)
         REFERENCES feedbacks(feedback_id)
     ON DELETE CASCADE,
