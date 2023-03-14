@@ -25,7 +25,7 @@ const getUsersByExerciseId = async (exercise_id) => {
                 GROUP BY u.user_name, p.exercise_id, e.title) as t1
 
             INNER JOIN solutions as a ON last_attempt_date = a.date
-            ORDER BY last_attempt_date DESC`
+            ORDER BY last_attempt_date DESC`;
 
         const res = await client.query( queryText, [ exercise_id ] );
 
@@ -65,7 +65,7 @@ const getExercisesByUserName = async (user_name) => {
                    GROUP BY u.user_name, p.exercise_id, e.title) as t1
 
                       INNER JOIN solutions as a ON last_attempt_date = a.date
-             ORDER BY last_attempt_date DESC`
+             ORDER BY last_attempt_date DESC`;
 
         const res = await client.query( queryText, [ user_name ] );
 
@@ -104,7 +104,6 @@ const getUserSolutions = async (user_id, exercise_id) => {
     }
 
 };
-
 
 module.exports = {
     getUsersByExerciseId,

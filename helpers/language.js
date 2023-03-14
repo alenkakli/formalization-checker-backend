@@ -59,6 +59,7 @@ class LanguageToVampire {
     const factories = this.getFactoriesForLanguage();
     return ((formula) => parseFormalization(formula, constants, predicates, functions, factories).toVampire());
   }
+
   getFactoriesForLanguage() {
     return {
       variable: (symbol) => new Variable(

@@ -4,7 +4,6 @@ const {vampire} = require('./vampire');
 module.exports = async function evaluateBadFormalization(
     solution, bad_formalizations, exercise
 ) {
-    //todo pomazat
 
     let language = new LanguageToVampire();
     const formulaToVampire = language.formulaToVampire(exercise);
@@ -26,10 +25,8 @@ module.exports = async function evaluateBadFormalization(
     };
 
     for (let i = 0; i < bad_formalizations.length; i++) {
-        console.log(`\t\tformulaToVampire(bad_formalizations[${i}].bad_formalization)`);
         bad_formalization = formulaToVampire(bad_formalizations[i].bad_formalization);
 
-        console.log("\t\tvampire(...)");
         eval_status.solutionToFormalization = await vampire(solution, bad_formalization, 10);
         if (eval_status.solutionToFormalization !== "OK") {
             continue;

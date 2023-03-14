@@ -7,6 +7,7 @@ const getUser= async (user_login) => {
         const queryText =
             'SELECT user_name, is_admin FROM users WHERE user_name=$1;'
         const res = await client.query(queryText, [user_login]);
+
         await client.query('COMMIT')
         return res.rows;
     } catch (e) {
@@ -33,6 +34,7 @@ const getAllUsers = async (user) => {
         const queryText =
             'SELECT user_name, is_admin FROM users WHERE user_name != $1;'
         const res = await client.query(queryText, [user]);
+
         await client.query('COMMIT')
         return res.rows;
     } catch (e) {
@@ -50,8 +52,9 @@ const saveUser = async (github_id, user_name ) => {
         await client.query('BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED')
         const queryText =
             `INSERT INTO users(github_id, user_name, is_admin) 
-            VALUES($1, $2, FALSE) ON CONFLICT DO NOTHING;`
+             VALUES($1, $2, FALSE) ON CONFLICT DO NOTHING;`
         const res = await client.query(queryText, [ github_id, user_name ]);
+
         await client.query('COMMIT')
         return res.rows;
     } catch (e) {
@@ -70,6 +73,7 @@ const updateAdmins = async (name, is_admin) => {
         const queryText =
             `UPDATE users SET is_admin = $2 WHERE user_name = $1;`
         const res = await client.query(queryText, [ name, is_admin ]);
+
         await client.query('COMMIT')
         return res.rows;
     } catch (e) {
@@ -80,7 +84,6 @@ const updateAdmins = async (name, is_admin) => {
     }
 
 };
-
 
 module.exports = {
     getUser,

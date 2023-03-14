@@ -5,8 +5,6 @@ const {vampire, evalWithVampire} = require('./vampire');
 module.exports = async function evaluate(
     solution, formalizations, exercise, migration
 ) {
-  //todo pomazat
-
   let {constraint} = getLanguage(exercise);
   let language = new LanguageToVampire();
 
@@ -38,10 +36,8 @@ module.exports = async function evaluate(
     languageContants: ''
   };
   for (let i = 0; i < formalizations.length; i++) {
-    console.log(`\t\tformulaToVampire(formalizations[${i}].formalization)`);
     formalization = formulaToVampire(formalizations[i].formalization);
 
-    console.log("\t\tvampire(...)");
     eval_status.solutionToFormalization = await vampire(solution, formalization, 10);
     eval_status.formalizationToSolution = await vampire(formalization, solution, 10);
     if (eval_status.formalizationToSolution === "OK" && eval_status.solutionToFormalization === "OK") {

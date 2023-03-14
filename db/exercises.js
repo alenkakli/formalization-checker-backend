@@ -20,6 +20,7 @@ const getExerciseByID = async (exercise_id, user_name) => {
 
         await client.query('COMMIT')
         return exercise;
+
     } catch (e) {
         await client.query('ROLLBACK');
         throw e
@@ -38,6 +39,7 @@ const _getExerciseByID = async (exercise_id, user_name, client) => {
     if (res.rows.length !== 1 || !propositions) {
         return null;
     }
+
     let exercise = res.rows[0];
     exercise.propositions = propositions;
 
@@ -80,9 +82,10 @@ const getExercisePreviews = async () => {
     try {
         await client.query('BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED')
         const queryText =
-            `SELECT e.exercise_id, e.title , count(DISTINCT(s.user_id)) as attempted  
-            FROM (exercises as e INNER JOIN propositions as p ON e.exercise_id = p.exercise_id )  
-                LEFT JOIN solutions as s ON s.proposition_id = p.proposition_id GROUP BY e.exercise_id;`;
+            `SELECT e.exercise_id, e.title, count(DISTINCT(s.user_id)) as attempted  
+             FROM (exercises as e INNER JOIN propositions as p ON e.exercise_id = p.exercise_id )  
+             LEFT JOIN solutions as s ON s.proposition_id = p.proposition_id 
+             GROUP BY e.exercise_id;`;
         const res = await client.query(queryText);
 
         await client.query('COMMIT')
@@ -116,8 +119,10 @@ const _getAllPropositionsForExercise = async (exercise_id, user_name, client) =>
 
 const _getAllFormalizationsForProposition = async (proposition_id, client) => {
     const queryText =
-        'SELECT * FROM formalizations WHERE proposition_id = $1;'
+        `SELECT * FROM formalizations 
+         WHERE proposition_id = $1;`
     const res = await client.query( queryText, [ proposition_id ]);
+
     if (res.rows.length === 0) {
         return null;
     }
@@ -127,8 +132,10 @@ const _getAllFormalizationsForProposition = async (proposition_id, client) => {
 
 const _getAllBadFormalizationsForProposition = async (proposition_id, client) => {
     const queryText =
-        'SELECT * FROM bad_formalizations WHERE proposition_id = $1;'
+        `SELECT * FROM bad_formalizations
+         WHERE proposition_id = $1;`
     const res = await client.query( queryText, [ proposition_id ]);
+
     if (res.rows.length === 0) {
         return null;
     }
@@ -159,6 +166,7 @@ const getBadExercises= async () => {
     }
 
 };
+
 const getBadPropositionsToExercise = async (exercise_id) => {
     const client = await pool.connect();
     try {
@@ -293,14 +301,10 @@ const saveExercise = async (
 const _saveProposition = async (exerciseID, { proposition, formalizations, constraints }, client) => {
     const queryText =
         `INSERT INTO propositions(proposition, exercise_id)
-        VALUES($1, $2) RETURNING proposition_id;`
-    const res = await client.query(
-        queryText,
-        [ proposition, exerciseID ]
-    );
+         VALUES($1, $2) RETURNING proposition_id;`
 
+    const res = await client.query(queryText, [ proposition, exerciseID ]);
     const propositionID = res.rows[0].proposition_id;
-
     for(let i = 0; i < formalizations.length; i++){
         await _saveFormalization(propositionID, formalizations[i], constraints[i], client);
     }
@@ -309,17 +313,16 @@ const _saveProposition = async (exerciseID, { proposition, formalizations, const
 const _saveFormalization = async (propositionID, formalization, constraint, client) => {
     const queryText =
         `INSERT INTO formalizations(formalization, constraints, proposition_id)
-        VALUES($1, $2, $3);`
-    await client.query(
-        queryText,
-        [ formalization, constraint, propositionID ]
-    );
+         VALUES($1, $2, $3);`
+
+    await client.query(queryText, [ formalization, constraint, propositionID ]);
 };
 
 const _saveSolution = async (studentID, propositionID, formalizationID, badFormalizationID, studentSolution, correctSolution, client) => {
     const queryText =
         `INSERT INTO solutions(user_id, proposition_id, formalization_id, bad_formalization_id, solution, is_correct, date)
-        VALUES($1, $2, $3, $4, $5, $6, NOW()::timestamp) returning solution_id;`
+         VALUES($1, $2, $3, $4, $5, $6, NOW()::timestamp)`
+
     await client.query(
         queryText,
         [ studentID, propositionID, formalizationID, badFormalizationID, studentSolution, correctSolution ]
@@ -329,12 +332,9 @@ const _saveSolution = async (studentID, propositionID, formalizationID, badForma
 const _saveBadFormalization = async (studentSolution, propositionID, client) => {
     const queryText =
         `INSERT INTO bad_formalizations(bad_formalization, proposition_id) 
-        VALUES($1, $2) returning bad_formalization_id;`
-    const res = await client.query(
-        queryText,
-        [ studentSolution, propositionID ]
-    );
+         VALUES($1, $2) RETURNING bad_formalization_id;`
 
+    const res = await client.query(queryText, [ studentSolution, propositionID ]);
     return res.rows[0].bad_formalization_id;
 };
 
@@ -342,10 +342,11 @@ const updateExercise = async (exercise) => {
     const client = await pool.connect();
     try {
         await client.query('BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ')
-
         const queryText =
-            `UPDATE exercises SET title = $2, description = $3, constants = $4, predicates = $5, functions = $6, constraints = $7
-             WHERE  exercise_id = $1;`
+            `UPDATE exercises 
+             SET title = $2, description = $3, constants = $4, predicates = $5, functions = $6, constraints = $7
+             WHERE exercise_id = $1;`
+
         await client.query(
             queryText,
             [ exercise.id, exercise.title, exercise.description, exercise.constants,
@@ -353,10 +354,11 @@ const updateExercise = async (exercise) => {
         );
 
         await _removeProposition(exercise.id, client);
-        for(let i = 0; i < exercise.propositions.length; i++){
-            await _saveProposition(exercise.id,
-                {"proposition": exercise.propositions[i].proposition,
-                    "formalizations": exercise.propositions[i].formalizations, "constraints": exercise.propositions[i].constraints}, client)
+        for(let i = 0; i < exercise.propositions.length; i++) {
+            await _saveProposition(exercise.id,{
+                    "proposition": exercise.propositions[i].proposition,
+                    "formalizations": exercise.propositions[i].formalizations,
+                    "constraints": exercise.propositions[i].constraints}, client)
         }
 
         await client.query('COMMIT')
@@ -373,12 +375,13 @@ const updateExercise = async (exercise) => {
 const removeExercise = async (exercise) => {
     const client = await pool.connect();
     try {
+        await client.query('BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ')
         const queryText =
             'DELETE FROM exercises WHERE exercise_id = $1;'
-        await client.query(
-            queryText,
-            [ exercise.id ]
-        );
+
+        await client.query(queryText, [ exercise.id ]);
+
+        await client.query('COMMIT')
     } catch (e) {
         await client.query('ROLLBACK');
         throw e
@@ -390,10 +393,8 @@ const removeExercise = async (exercise) => {
 const _removeProposition = async (exercise_id, client) => {
     const queryText =
         'DELETE FROM propositions WHERE exercise_id = $1;'
-    await client.query(
-        queryText,
-        [ exercise_id ]
-    );
+
+    await client.query(queryText, [ exercise_id ]);
 };
 
 const evaluateResult = async (user, exercise_id, proposition_id, solution) => {
@@ -409,11 +410,10 @@ const evaluateResult = async (user, exercise_id, proposition_id, solution) => {
         }
 
         const migration = false;
-        const {eval_status, isCorrectSolution, bad_formalization_id, formalization_id} = await _evaluate(proposition_id, exercise_id, solution, client, migration);
+        const {eval_status, isCorrectSolution, bad_formalization_id, formalization_id} = await findEquivalentSolutions(proposition_id, exercise_id, solution, client, migration);
         await _saveSolution(user_id, proposition_id, formalization_id, bad_formalization_id, solution, isCorrectSolution, client);
 
         await client.query('COMMIT');
-
         return eval_status;
 
     } catch (e) {
@@ -424,29 +424,22 @@ const evaluateResult = async (user, exercise_id, proposition_id, solution) => {
     }
 };
 
-async function _evaluate (proposition_id, exercise_id, solution, client, migration) {
-    //todo pomazat
-
+async function findEquivalentSolutions (proposition_id, exercise_id, solution, client, migration) {
     const formalizations = await _getAllFormalizationsForProposition(proposition_id, client);
-
     let exercise = await _getExerciseByID(exercise_id, null, client);
 
     if (!formalizations || !exercise || formalizations.length === 0) {
         throw new ExerciseException();
     }
 
-    console.log("\tevaluate");
     const eval_status = await evaluate(solution, formalizations, exercise, migration);
-
     const isCorrectSolution = (eval_status.solutionToFormalization === 'OK' &&
         eval_status.formalizationToSolution === 'OK')
 
     let bad_formalization_id = null;
-
     if (!isCorrectSolution) {
         const bad_formalizations = await _getAllBadFormalizationsForProposition(proposition_id, client);
         if (bad_formalizations !== null) {
-            console.log("\tevaluateBadFormalization");
             bad_formalization_id = await evaluateBadFormalization(solution, bad_formalizations, exercise);
             if (bad_formalization_id === null) {
                 bad_formalization_id = await _saveBadFormalization(solution, proposition_id, client);
