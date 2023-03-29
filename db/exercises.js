@@ -8,6 +8,7 @@ function UserException(message) {
     this.message = message;
     this.name = 'UserException';
 }
+
 function ExerciseException() {
     this.name = 'ExerciseException';
 }
@@ -28,7 +29,6 @@ const getExerciseByID = async (exercise_id, user_name) => {
     } finally {
         client.release()
     }
-
 };
 
 const _getExerciseByID = async (exercise_id, user_name, client) => {
@@ -36,7 +36,7 @@ const _getExerciseByID = async (exercise_id, user_name, client) => {
         'SELECT * FROM exercises WHERE exercise_id = $1;'
     const res = await client.query(queryText, [exercise_id]);
 
-    let propositions = await _getAllPropositionsForExercise(exercise_id, user_name, client);
+    let propositions = await _getAllPropositionsToExercise(exercise_id, user_name, client);
     if (res.rows.length !== 1 || !propositions) {
         return null;
     }
@@ -55,14 +55,14 @@ const getExerciseByIDWithFormalizations = async (exercise_id) => {
             'SELECT * FROM exercises WHERE exercise_id = $1;'
         const res = await client.query(queryText, [exercise_id]);
 
-        let propositions = await _getAllPropositionsForExercise(exercise_id, null, client);
+        let propositions = await _getAllPropositionsToExercise(exercise_id, null, client);
         if (res.rows.length !== 1 || !propositions) {
             return null;
         }
 
         let exercise = res.rows[0];
-        for(let i = 0; i < propositions.length; i++){
-            propositions[i].formalization = await _getAllFormalizationsForProposition(propositions[i].proposition_id, client);
+        for (let i = 0; i < propositions.length; i++) {
+            propositions[i].formalization = await _getAllFormalizationsToProposition(propositions[i].proposition_id, client);
         }
         exercise.propositions = propositions;
 
@@ -75,7 +75,6 @@ const getExerciseByIDWithFormalizations = async (exercise_id) => {
     } finally {
         client.release()
     }
-
 };
 
 const getExercisePreviews = async () => {
@@ -83,9 +82,9 @@ const getExercisePreviews = async () => {
     try {
         await client.query('BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED')
         const queryText =
-            `SELECT e.exercise_id, e.title, count(DISTINCT(s.user_id)) as attempted  
-             FROM (exercises as e INNER JOIN propositions as p ON e.exercise_id = p.exercise_id )  
-             LEFT JOIN solutions as s ON s.proposition_id = p.proposition_id 
+            `SELECT e.exercise_id, e.title, count(DISTINCT (s.user_id)) as attempted
+             FROM (exercises as e INNER JOIN propositions as p ON e.exercise_id = p.exercise_id)
+                      LEFT JOIN solutions as s ON s.proposition_id = p.proposition_id
              GROUP BY e.exercise_id;`;
         const res = await client.query(queryText);
 
@@ -98,18 +97,65 @@ const getExercisePreviews = async () => {
     } finally {
         client.release()
     }
-
 };
 
-const _getAllPropositionsForExercise = async (exercise_id, user_name, client) => {
+const getExerciseTitle = async (exercise_id) => {
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED')
+        const queryText =
+            `SELECT title
+             FROM exercises
+             WHERE exercise_id = $1`;
+        const res = await client.query(queryText, [exercise_id]);
+
+        await client.query('COMMIT')
+        return res.rows[0].title;
+
+    } catch (e) {
+        await client.query('ROLLBACK');
+        throw e
+    } finally {
+        client.release()
+    }
+};
+
+const getPropositionTitle = async (proposition_id) => {
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED')
+        const queryText =
+            `SELECT proposition
+             FROM propositions
+             WHERE proposition_id = $1`;
+        const res = await client.query(queryText, [proposition_id]);
+
+        await client.query('COMMIT')
+        return res.rows[0].proposition;
+
+    } catch (e) {
+        await client.query('ROLLBACK');
+        throw e
+    } finally {
+        client.release()
+    }
+};
+
+const _getAllPropositionsToExercise = async (exercise_id, user_name, client) => {
     const queryText =
-        `SELECT p.proposition_id, p.proposition,
-                (SELECT s.solution FROM solutions as s
-                    LEFT JOIN users as u ON s.user_id = u.github_id
-                 WHERE s.proposition_id = p.proposition_id AND u.user_name = $2
-                 ORDER BY date DESC LIMIT 1)
-         FROM propositions as p WHERE p.exercise_id = $1 ORDER BY p.proposition_id;`
-    const res = await client.query( queryText, [ exercise_id, user_name ] );
+        `SELECT p.proposition_id,
+                p.proposition,
+                (SELECT s.solution
+                 FROM solutions as s
+                          LEFT JOIN users as u ON s.user_id = u.github_id
+                 WHERE s.proposition_id = p.proposition_id
+                   AND u.user_name = $2
+                 ORDER BY date DESC
+                 LIMIT 1)
+         FROM propositions as p
+         WHERE p.exercise_id = $1
+         ORDER BY p.proposition_id;`
+    const res = await client.query(queryText, [exercise_id, user_name]);
 
     if (res.rows.length === 0) {
         return null;
@@ -118,11 +164,29 @@ const _getAllPropositionsForExercise = async (exercise_id, user_name, client) =>
     return res.rows;
 };
 
-const _getAllFormalizationsForProposition = async (proposition_id, client) => {
+const getAllFormalizationsToProposition = async (proposition_id) => {
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED')
+
+        const res = await _getAllFormalizationsToProposition(proposition_id, client);
+
+        await client.query('COMMIT')
+        return res;
+    } catch (e) {
+        await client.query('ROLLBACK');
+        throw e
+    } finally {
+        client.release()
+    }
+};
+
+const _getAllFormalizationsToProposition = async (proposition_id, client) => {
     const queryText =
-        `SELECT * FROM formalizations 
+        `SELECT *
+         FROM formalizations
          WHERE proposition_id = $1;`
-    const res = await client.query( queryText, [ proposition_id ]);
+    const res = await client.query(queryText, [proposition_id]);
 
     if (res.rows.length === 0) {
         return null;
@@ -131,11 +195,12 @@ const _getAllFormalizationsForProposition = async (proposition_id, client) => {
     return res.rows;
 };
 
-const _getAllBadFormalizationsForProposition = async (proposition_id, client) => {
+const _getAllBadFormalizationsToProposition = async (proposition_id, client) => {
     const queryText =
-        `SELECT * FROM bad_formalizations
+        `SELECT *
+         FROM bad_formalizations
          WHERE proposition_id = $1;`
-    const res = await client.query( queryText, [ proposition_id ]);
+    const res = await client.query(queryText, [proposition_id]);
 
     if (res.rows.length === 0) {
         return null;
@@ -144,8 +209,7 @@ const _getAllBadFormalizationsForProposition = async (proposition_id, client) =>
     return res.rows;
 };
 
-const getBadExercises= async () => {
-    // todo pomazat solutions vsade asi
+const getBadExercises = async () => {
     const client = await pool.connect();
     try {
         await client.query('BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED')
@@ -154,7 +218,6 @@ const getBadExercises= async () => {
                              e.title,
                              count(DISTINCT (s.bad_formalization_id)) as bad_formalizations,
                              count(DISTINCT (s.user_id))              as students
-    --                          ,count(DISTINCT (s.solution_id))          as solutions
              FROM bad_formalizations b
                       JOIN propositions p ON b.proposition_id = p.proposition_id
                       JOIN exercises e ON p.exercise_id = e.exercise_id
@@ -173,7 +236,6 @@ const getBadExercises= async () => {
     } finally {
         client.release()
     }
-
 };
 
 const getBadPropositionsToExercise = async (exercise_id) => {
@@ -182,13 +244,12 @@ const getBadPropositionsToExercise = async (exercise_id) => {
         await client.query('BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED')
         const propositions = await _getBadPropositionsToExercise(exercise_id, client);
 
-        for(let i = 0; i < propositions.length; i++){
+        for (let i = 0; i < propositions.length; i++) {
             propositions[i].bad_formalizations = await _getNumberOfBadFormalizationsToProposition(propositions[i].proposition_id, client);
             propositions[i].students = await _getNumberOfStudentsToProposition(propositions[i].proposition_id, client);
-            // propositions[i].solutions = await _getNumberOfSolutionsToProposition(propositions[i].proposition_id, client);
         }
         propositions.sort((a, b) => {
-            return b.students - a.students
+            return b.students - a.students;
         })
 
         await client.query('COMMIT')
@@ -200,69 +261,55 @@ const getBadPropositionsToExercise = async (exercise_id) => {
     } finally {
         client.release()
     }
-
 };
 
 const _getBadPropositionsToExercise = async (exercise_id, client) => {
     const queryText =
-        `SELECT DISTINCT ON (p.proposition_id) p.proposition_id, p.proposition, e.title
+        `SELECT DISTINCT ON (p.proposition_id) p.proposition_id, p.proposition
          FROM bad_formalizations b
                   JOIN propositions p ON b.proposition_id = p.proposition_id
-                  JOIN exercises e ON p.exercise_id = e.exercise_id
          WHERE p.exercise_id = $1`
 
-    const res = await client.query(queryText, [ exercise_id ]);
+    const res = await client.query(queryText, [exercise_id]);
     return res.rows;
 };
 
 const _getNumberOfBadFormalizationsToProposition = async (proposition_id, client) => {
     const queryText =
-        `SELECT count(*) FROM bad_formalizations b
-            JOIN propositions p ON b.proposition_id = p.proposition_id
-            WHERE b.proposition_id = $1`
+        `SELECT count(*)
+         FROM bad_formalizations b
+                  JOIN propositions p ON b.proposition_id = p.proposition_id
+         WHERE b.proposition_id = $1`
 
-    const res = await client.query(queryText, [ proposition_id ]);
+    const res = await client.query(queryText, [proposition_id]);
     return res.rows[0].count;
 };
 
 const _getNumberOfStudentsToProposition = async (proposition_id, client) => {
     const queryText =
-        `SELECT count(DISTINCT (user_id)) FROM solutions
-         WHERE proposition_id = $1 and is_correct = false`
+        `SELECT count(DISTINCT (user_id))
+         FROM solutions
+         WHERE proposition_id = $1
+           and is_correct = false`
 
-    const res = await client.query(queryText, [ proposition_id ]);
+    const res = await client.query(queryText, [proposition_id]);
     return res.rows[0].count;
 };
-
-// const _getNumberOfSolutionsToProposition= async (proposition_id, client) => {
-//     const queryText =
-//         `SELECT count(*) FROM solutions
-//          WHERE proposition_id = $1 and is_correct = false`
-//
-//     const res = await client.query(queryText, [ proposition_id ]);
-//     return res.rows[0].count;
-// };
 
 const getBadFormalizationsToProposition = async (exercise_id, proposition_id) => {
     const client = await pool.connect();
     try {
         await client.query('BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED')
-        const formalizations = await _getBadFormalizationToProposition(proposition_id, client);
+        const formalizations = await _getBadFormalizationsToProposition(proposition_id, client);
 
-        for(let i = 0; i < formalizations.length; i++){
-            formalizations[i].bad_solutions = await _getAllToBadFormalization(formalizations[i].bad_formalization_id, exercise_id, client);
-            // todo
-            formalizations[i].feedback = await _getFeedbacks(formalizations[i].bad_formalization_id, client);
+        for (let i = 0; i < formalizations.length; i++) {
             formalizations[i].students = await _getNumberOfStudentsToBadFormalization(formalizations[i].bad_formalization_id, client);
-            // formalizations[i].solutions = await _getNumberOfSolutionsToBadFormalization(formalizations[i].bad_formalization_id, client);
         }
         formalizations.sort((a, b) => {
-            return b.students - a.students
+            return b.students - a.students;
         })
-        formalizations[0].formalizations = await _getFormalizationsToProposition(proposition_id, client);
 
         await client.query('COMMIT')
-
         return formalizations;
 
     } catch (e) {
@@ -273,22 +320,51 @@ const getBadFormalizationsToProposition = async (exercise_id, proposition_id) =>
     }
 };
 
-const _getBadFormalizationToProposition = async (proposition_id, client) => {
+const _getBadFormalizationsToProposition = async (proposition_id, client) => {
     const queryText =
-        `SELECT b.bad_formalization_id, b.bad_formalization, p.proposition FROM bad_formalizations b
-            JOIN propositions p ON b.proposition_id = p.proposition_id
-            WHERE b.proposition_id = $1`
+        `SELECT b.bad_formalization_id
+         FROM bad_formalizations b
+         WHERE b.proposition_id = $1`
 
-    const res = await client.query(queryText, [ proposition_id ]);
+    const res = await client.query(queryText, [proposition_id]);
     return res.rows;
 };
 
-const _getAllToBadFormalization = async (bad_formalization_id, exercise_id, client) => {
+const getBadFormalizationInfo = async (exercise_id, bad_formalization_id) => {
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED')
+        const bad_formalization = await _getBadFormalization(bad_formalization_id, client);
+        bad_formalization.bad_solutions = await _getAllSolutionsToBadFormalization(bad_formalization_id, exercise_id, client);
+
+        await client.query('COMMIT')
+        return bad_formalization;
+
+    } catch (e) {
+        await client.query('ROLLBACK');
+        throw e
+    } finally {
+        client.release()
+    }
+};
+
+const _getBadFormalization = async (bad_formalization_id, client) => {
     const queryText =
-        `SELECT DISTINCT ON (solution) solution, solution_id, user_id FROM solutions
+        `SELECT bad_formalization_id, bad_formalization
+         FROM bad_formalizations b
          WHERE bad_formalization_id = $1`
 
-    const res = await client.query(queryText, [ bad_formalization_id ]);
+    const res = await client.query(queryText, [bad_formalization_id]);
+    return res.rows[0];
+};
+
+const _getAllSolutionsToBadFormalization = async (bad_formalization_id, exercise_id, client) => {
+    const queryText =
+        `SELECT DISTINCT ON (solution) solution, solution_id, user_id
+         FROM solutions
+         WHERE bad_formalization_id = $1`
+
+    const res = await client.query(queryText, [bad_formalization_id]);
     if (res.rows.length === 1) {
         return null;
     }
@@ -298,34 +374,22 @@ const _getAllToBadFormalization = async (bad_formalization_id, exercise_id, clie
     let exercise = await _getExerciseByID(exercise_id, null, client);
     let l1, l2, formulaToVampire1, formulaToVampire2 = null;
 
-outer:
-    for(let i = 1; i < res.rows.length; i++){
+    for (let i = 1; i < res.rows.length; i++) {
         l1 = new LanguageToVampire();
         formulaToVampire1 = l1.formulaToVampire(exercise);
-        // todo pomazat
-        // console.log("outer")
-        // console.log(i)
         let a = res.rows[i].solution;
-        // console.log(a)
         a = formulaToVampire1(a);
-        // console.log(a)
 
         let isUnique = true;
 
-    inner:
-        for (let j=0; j < uniqueRes.length; j++){
+        for (let j = 0; j < uniqueRes.length; j++) {
             l2 = new LanguageToVampire();
             formulaToVampire2 = l2.formulaToVampire(exercise);
-            // console.log("inner")
-            // console.log(j)
             let b = uniqueRes[j].solution;
-            // console.log(b)
             b = formulaToVampire2(b);
-            // console.log(b)
-            // console.log()
             if (a === b) {
                 isUnique = false;
-                break inner;
+                break;
             }
         }
 
@@ -341,123 +405,27 @@ outer:
     return uniqueRes;
 };
 
-const _getFeedbacks = async (bad_formalization_id, client) => {
-    const queryText =
-        `SELECT feedback_id, feedback, author, active FROM feedbacks f
-         WHERE bad_formalization_id = $1`
-
-    const res = await client.query(queryText, [ bad_formalization_id ]);
-    return res.rows;
-};
-
 const _getNumberOfStudentsToBadFormalization = async (bad_formalization_id, client) => {
     const queryText =
-        `SELECT count(DISTINCT (user_id)) FROM solutions
+        `SELECT count(DISTINCT (user_id))
+         FROM solutions
          WHERE bad_formalization_id = $1`
 
-    const res = await client.query(queryText, [ bad_formalization_id ]);
+    const res = await client.query(queryText, [bad_formalization_id]);
     return res.rows[0].count;
 };
 
-// const _getNumberOfSolutionsToBadFormalization = async (bad_formalization_id, client) => {
-//     const queryText =
-//         `SELECT count(*) FROM solutions
-//          WHERE bad_formalization_id = $1`
-//
-//     const res = await client.query(queryText, [ bad_formalization_id ]);
-//     return res.rows[0].count;
-// };
-
-const _getFormalizationsToProposition = async (proposition_id, client) => {
-    const queryText =
-        `SELECT f.formalization FROM formalizations f
-         JOIN propositions p ON f.proposition_id = p.proposition_id
-         WHERE f.proposition_id = $1`
-
-    const res = await client.query(queryText, [ proposition_id ]);
-    return res.rows;
-};
-
-const getFeedbacksToBadFormalization = async (bad_formalization_id) => {
-    console.log("getFeedbacksToBadFormalization")
-    const client = await pool.connect();
-    try {
-        await client.query('BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED')
-
-        const queryText =
-            `SELECT feedback_id, feedback, author, active FROM feedbacks f
-         WHERE bad_formalization_id = $1`
-        const res = await client.query(queryText, [ bad_formalization_id ]);
-
-        await client.query('COMMIT')
-        console.log(res.rows)
-        return res.rows;
-
-    } catch (e) {
-        await client.query('ROLLBACK');
-        throw e
-    } finally {
-        client.release()
-    }
-};
-
-const getBadSolutions = async (bad_formalization_id) => {  // todo, nikde sa nevyuziva ???
-    const client = await pool.connect();
-    try {
-        await client.query('BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED')
-        const queryText =
-            `SELECT DISTINCT s.solution FROM solutions as s
-             JOIN bad_formalizations as b ON s.bad_formalization_id = b.bad_formalization_id
-             WHERE b.bad_formalization_id = $1`
-
-        const res = await client.query(queryText, [ bad_formalization_id ]);
-
-        if (res.rows.length !== 1) {
-            return null;
-        }
-
-        await client.query('COMMIT')
-        return res.rows;
-
-    } catch (e) {
-        await client.query('ROLLBACK');
-        throw e
-    } finally {
-        client.release()
-    }
-
-};
-
-const saveFeedback = async (user, bad_formalization_id, feedback) => {
-    const client = await pool.connect();
-    try {
-        await client.query('BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED')
-        const queryText =
-            `INSERT INTO feedbacks(feedback, bad_formalization_id, author, active)
-             VALUES($1, $2, $3, true) RETURNING feedback_id;`
-
-        await client.query(queryText, [ feedback, bad_formalization_id, user]);
-
-        await client.query('COMMIT')
-
-    } catch (e) {
-        await client.query('ROLLBACK');
-        throw e
-    } finally {
-        client.release()
-    }
-};
-
 const saveExercise = async (
-    { title, description, constants, predicates, functions, propositions, constraint }) => {
+    {title, description, constants, predicates, functions, propositions, constraint}) => {
     const client = await pool.connect();
     try {
         await client.query('BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED')
         const queryText =
             `INSERT INTO exercises(title, description, constants, predicates, functions, constraints)
-             VALUES($1, $2, $3, $4, $5, $6) RETURNING exercise_id;`
+             VALUES ($1, $2, $3, $4, $5, $6)
+             RETURNING exercise_id;`
 
-        const res = await client.query(queryText, [ title, description, constants, predicates, functions, constraint ]);
+        const res = await client.query(queryText, [title, description, constants, predicates, functions, constraint]);
         const exerciseID = res.rows[0].exercise_id;
         propositions.forEach(p => {
             _saveProposition(exerciseID, p, client);
@@ -473,14 +441,15 @@ const saveExercise = async (
     }
 };
 
-const _saveProposition = async (exerciseID, { proposition, formalizations, constraints }, client) => {
+const _saveProposition = async (exerciseID, {proposition, formalizations, constraints}, client) => {
     const queryText =
         `INSERT INTO propositions(proposition, exercise_id)
-         VALUES($1, $2) RETURNING proposition_id;`
+         VALUES ($1, $2)
+         RETURNING proposition_id;`
 
-    const res = await client.query(queryText, [ proposition, exerciseID ]);
+    const res = await client.query(queryText, [proposition, exerciseID]);
     const propositionID = res.rows[0].proposition_id;
-    for(let i = 0; i < formalizations.length; i++){
+    for (let i = 0; i < formalizations.length; i++) {
         await _saveFormalization(propositionID, formalizations[i], constraints[i], client);
     }
 };
@@ -488,28 +457,30 @@ const _saveProposition = async (exerciseID, { proposition, formalizations, const
 const _saveFormalization = async (propositionID, formalization, constraint, client) => {
     const queryText =
         `INSERT INTO formalizations(formalization, constraints, proposition_id)
-         VALUES($1, $2, $3);`
+         VALUES ($1, $2, $3);`
 
-    await client.query(queryText, [ formalization, constraint, propositionID ]);
+    await client.query(queryText, [formalization, constraint, propositionID]);
 };
 
 const _saveSolution = async (studentID, propositionID, formalizationID, badFormalizationID, studentSolution, correctSolution, client) => {
     const queryText =
-        `INSERT INTO solutions(user_id, proposition_id, formalization_id, bad_formalization_id, solution, is_correct, date)
-         VALUES($1, $2, $3, $4, $5, $6, NOW()::timestamp)`
+        `INSERT INTO solutions(user_id, proposition_id, formalization_id, bad_formalization_id, solution, is_correct,
+                               date)
+         VALUES ($1, $2, $3, $4, $5, $6, NOW()::timestamp)`
 
     await client.query(
         queryText,
-        [ studentID, propositionID, formalizationID, badFormalizationID, studentSolution, correctSolution ]
+        [studentID, propositionID, formalizationID, badFormalizationID, studentSolution, correctSolution]
     );
 };
 
 const _saveBadFormalization = async (studentSolution, propositionID, client) => {
     const queryText =
-        `INSERT INTO bad_formalizations(bad_formalization, proposition_id) 
-         VALUES($1, $2) RETURNING bad_formalization_id;`
+        `INSERT INTO bad_formalizations(bad_formalization, proposition_id)
+         VALUES ($1, $2)
+         RETURNING bad_formalization_id;`
 
-    const res = await client.query(queryText, [ studentSolution, propositionID ]);
+    const res = await client.query(queryText, [studentSolution, propositionID]);
     return res.rows[0].bad_formalization_id;
 };
 
@@ -518,22 +489,28 @@ const updateExercise = async (exercise) => {
     try {
         await client.query('BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ')
         const queryText =
-            `UPDATE exercises 
-             SET title = $2, description = $3, constants = $4, predicates = $5, functions = $6, constraints = $7
+            `UPDATE exercises
+             SET title = $2,
+                 description = $3,
+                 constants = $4,
+                 predicates = $5,
+                 functions = $6,
+                 constraints = $7
              WHERE exercise_id = $1;`
 
         await client.query(
             queryText,
-            [ exercise.id, exercise.title, exercise.description, exercise.constants,
-                exercise.predicates, exercise.functions, exercise.constraint ]
+            [exercise.id, exercise.title, exercise.description, exercise.constants,
+                exercise.predicates, exercise.functions, exercise.constraint]
         );
 
         await _removeProposition(exercise.id, client);
-        for(let i = 0; i < exercise.propositions.length; i++) {
-            await _saveProposition(exercise.id,{
-                    "proposition": exercise.propositions[i].proposition,
-                    "formalizations": exercise.propositions[i].formalizations,
-                    "constraints": exercise.propositions[i].constraints}, client)
+        for (let i = 0; i < exercise.propositions.length; i++) {
+            await _saveProposition(exercise.id, {
+                "proposition": exercise.propositions[i].proposition,
+                "formalizations": exercise.propositions[i].formalizations,
+                "constraints": exercise.propositions[i].constraints
+            }, client)
         }
 
         await client.query('COMMIT')
@@ -544,7 +521,6 @@ const updateExercise = async (exercise) => {
     } finally {
         client.release()
     }
-
 };
 
 const removeExercise = async (exercise) => {
@@ -554,9 +530,9 @@ const removeExercise = async (exercise) => {
         const queryText =
             'DELETE FROM exercises WHERE exercise_id = $1;'
 
-        await client.query(queryText, [ exercise.id ]);
-
+        await client.query(queryText, [exercise.id]);
         await client.query('COMMIT')
+
     } catch (e) {
         await client.query('ROLLBACK');
         throw e
@@ -569,7 +545,7 @@ const _removeProposition = async (exercise_id, client) => {
     const queryText =
         'DELETE FROM propositions WHERE exercise_id = $1;'
 
-    await client.query(queryText, [ exercise_id ]);
+    await client.query(queryText, [exercise_id]);
 };
 
 const evaluateResult = async (user, exercise_id, proposition_id, solution) => {
@@ -585,7 +561,12 @@ const evaluateResult = async (user, exercise_id, proposition_id, solution) => {
         }
 
         const migration = false;
-        const {eval_status, isCorrectSolution, bad_formalization_id, formalization_id} = await findEquivalentSolutions(proposition_id, exercise_id, solution, client, migration);
+        const {
+            eval_status,
+            isCorrectSolution,
+            bad_formalization_id,
+            formalization_id
+        } = await findEquivalentSolutions(proposition_id, exercise_id, solution, client, migration);
         await _saveSolution(user_id, proposition_id, formalization_id, bad_formalization_id, solution, isCorrectSolution, client);
 
         await client.query('COMMIT');
@@ -599,8 +580,8 @@ const evaluateResult = async (user, exercise_id, proposition_id, solution) => {
     }
 };
 
-async function findEquivalentSolutions (proposition_id, exercise_id, solution, client, migration) {
-    const formalizations = await _getAllFormalizationsForProposition(proposition_id, client);
+const findEquivalentSolutions = async (proposition_id, exercise_id, solution, client, migration) => {
+    const formalizations = await _getAllFormalizationsToProposition(proposition_id, client);
     let exercise = await _getExerciseByID(exercise_id, null, client);
 
     if (!formalizations || !exercise || formalizations.length === 0) {
@@ -613,7 +594,7 @@ async function findEquivalentSolutions (proposition_id, exercise_id, solution, c
 
     let bad_formalization_id = null;
     if (!isCorrectSolution) {
-        const bad_formalizations = await _getAllBadFormalizationsForProposition(proposition_id, client);
+        const bad_formalizations = await _getAllBadFormalizationsToProposition(proposition_id, client);
         if (bad_formalizations !== null) {
             bad_formalization_id = await evaluateBadFormalization(solution, bad_formalizations, exercise);
             if (bad_formalization_id === null) {
@@ -624,37 +605,28 @@ async function findEquivalentSolutions (proposition_id, exercise_id, solution, c
         }
     }
 
-    const formalization_id = await _getFormalizationByPropositionId(proposition_id, client);
+
+    const formalization_id = formalizations[0].formalization_id;
 
     return {eval_status, isCorrectSolution, bad_formalization_id, formalization_id};
 }
-
-const _getFormalizationByPropositionId = async (proposition_id, client) => {
-    const queryText =
-        'SELECT formalization_id FROM formalizations WHERE proposition_id = $1 LIMIT 1;'
-    const res = await client.query( queryText, [ proposition_id ] );
-
-    if (res.rows.length === 0) {
-        return null;
-    }
-
-    return res.rows[0].formalization_id;
-};
 
 module.exports = {
     getExercisePreviews,
     getExerciseByID,
     getExerciseByIDWithFormalizations,
+    getExerciseTitle,
+    getPropositionTitle,
+    getAllFormalizationsToProposition,
     getBadExercises,
     getBadPropositionsToExercise,
     getBadFormalizationsToProposition,
-    getFeedbacksToBadFormalization,
-    saveFeedback,
+    getBadFormalizationInfo,
     saveExercise,
     updateExercise,
     removeExercise,
     evaluateResult,
+    findEquivalentSolutions,
     UserException,
     ExerciseException,
-    findEquivalentSolutions
 };

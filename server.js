@@ -14,6 +14,7 @@ server.use(jwt({ secret: TOKEN_SECRET, algorithms: ['HS256']})
     .unless({path: ['/api/users/login', '/api/users/login/github/auth']}));
 
 server.use('/api/exercises', require('./routes/api/exercises'));
+server.use('/api/feedbacks', require('./routes/api/feedbacks'));
 server.use('/api/progress', require('./routes/api/progress'));
 server.use('/api/users', require('./routes/api/users'));
 
