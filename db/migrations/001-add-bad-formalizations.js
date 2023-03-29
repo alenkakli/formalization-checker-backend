@@ -41,7 +41,7 @@ async function evaluateOldResults() {
     } finally {
         client.release()
     }
-};
+}
 
 const _getAllSolutions = async (client) => {
     const queryText =

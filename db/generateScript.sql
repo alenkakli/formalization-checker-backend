@@ -17,7 +17,7 @@ VALUES('Študenti a školitelia sú disjunktní.', 1);
 INSERT INTO propositions(proposition, exercise_id)
 VALUES('Študent absolvuje predmet, iba ak ho má zapísaný.', 1);
 INSERT INTO propositions(proposition, exercise_id)
-VALUES('Študent, ktorý absolvoval predmet, je spokojný.', 1);karkubkarkub
+VALUES('Študent, ktorý absolvoval predmet, je spokojný.', 1);
 INSERT INTO propositions(proposition, exercise_id)
 VALUES('Každý študent má medzi študentami aspoň dvoch kamarátov, pričom s jedným sa kamaráti viac než s tým druhým.', 1);
 INSERT INTO propositions(proposition, exercise_id)
