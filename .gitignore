@@ -102,3 +102,9 @@ dist
 
 # TernJS port file
 .tern-port
+
+# Test TPTP-coded problems
+*.tptp
+
+# JetBrains IDEs
+/.idea
