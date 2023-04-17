@@ -3,7 +3,6 @@ const fs = require('fs')
 const { PATH_TO_VAMPIRE } = require('../config');
 const  {getStructure}  = require('./parse');
 const { execFile } = require('child_process');
-const e = require("express");
 
 const execFileWithInput = (file, args, input, callback) =>
     new Promise((resolve, reject) => {
@@ -14,9 +13,8 @@ const execFileWithInput = (file, args, input, callback) =>
         child.stdin.end();
     });
 
-
 async function evalWithVampire(
-    res, solution, constraintToExer, constraintToProp, formalization, saveSolutionWithResult, language, exercise, timeLimit = 10
+    solution, constraintToExer, constraintToProp, formalization, language, exercise, timeLimit = 10
 ) {
     let eval_status = {
         solutionToFormalization: '',
@@ -32,8 +30,7 @@ async function evalWithVampire(
     eval_status.solutionToFormalization = await vampire(solution, formalization, timeLimit);
     eval_status.formalizationToSolution = await vampire(formalization, solution, timeLimit);
     if (eval_status.formalizationToSolution === "OK" && eval_status.solutionToFormalization === "OK") {
-        res.status(200).json(eval_status);
-        saveSolutionWithResult(eval_status);
+        return eval_status;
     } else {
         let notFound = ' sa nepodarilo nájsť automaticky. Ak neviete nájsť chybu, poraďte sa s vyučujúcimi.';
         let structureSolutionToFormalization = ', v ktorej je vaša formalizácia pravdivá, ale hľadaná správna formalizácia je nepravdivá'
@@ -52,8 +49,8 @@ async function evalWithVampire(
         eval_status.m2 = vampireOutput.m !== '' ? "Štruktúra " + vampireOutput.m + structureSolutionToFormalization + ":"
             : "Štruktúra"+ vampireOutput.m  + structureSolutionToFormalization + ","  + notFound ;
         eval_status.symbolsSolutionToFormalization = vampireOutput.symbols !== undefined ? vampireOutput.symbols : '';
-        res.status(200).json(eval_status);
-        saveSolutionWithResult(eval_status);
+
+        return eval_status;
     }
 }
 
@@ -71,9 +68,10 @@ async function evalWithVampire(
     }
     catch (err){
         if(err.message.substr(0, 15 ) === "Command failed:" && err.code === 1){
-            return {status: setStatus("Time"), domain: "", predicates: "", m: ""};
+            return setStatus("Time");
         }
-        return {status: setStatus("failed"), domain: "", predicates: "", m: ""};
+        console.error(`Unknown evaluation result: ${err}\n${err.stack}`);
+        return setStatus(`failed`);
     }
 
   }
@@ -99,7 +97,8 @@ async function evalWithVampire(
           if(err.message.substr(0, 15 ) === "Command failed:" && err.code === 1){
               return {status: setStatus("Time"), domain: "", predicates: "", m: ""};
           }
-          return {status: setStatus("failed"), domain: "", predicates: "", m: ""};
+          console.error(`Unknown evaluation result: ${err}\n${err.stack}`);
+          return {status: setStatus(`failed`), domain: "", predicates: "", m: ""};
       }
 
   }
@@ -152,7 +151,7 @@ function setStatus(result) {
     if (result === 'Memory limit') {
         return 'ML';
     } else {
-        console.error('Unknown evaluation result.');
+        return 'Unknown'
     }
 }
 module.exports = {
