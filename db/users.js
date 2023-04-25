@@ -32,7 +32,7 @@ const getAllUsers = async (user) => {
     try {
         await client.query('BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED')
         const queryText =
-            'SELECT user_name, is_admin FROM users WHERE user_name != $1;'
+            'SELECT user_name, is_admin FROM users WHERE user_name != $1 ORDER BY user_name;'
         const res = await client.query(queryText, [user]);
 
         await client.query('COMMIT')
