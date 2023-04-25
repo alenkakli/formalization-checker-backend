@@ -8,9 +8,6 @@ const {
     saveExercise, updateExercise, removeExercise,
     evaluateResult, UserException, ExerciseException
 } = require('../../db/exercises');
-const {
-    getFeedbacksToProposition
-} = require('../../db/feedbacks');
 const {authAdmin} = require('../../helpers/auth');
 
 router.post('/', authAdmin, async (req, res) => {
@@ -169,33 +166,6 @@ router.post('/:exercise_id/:proposition_id', async (req, res) => {
 
 });
 
-// todo, presunut do api/feedback
-router.get('/feedback/:proposition_id', async (req, res) => {
-    try {
-        let {proposition_id} = req.params;
-        proposition_id = parseInt(proposition_id, 10);
-        if (isNaN(proposition_id)) {
-            console.error('URL parameters are not numbers.');
-            res.sendStatus(400);
-            return;
-        }
-
-        const feedbacks = await getFeedbacksToProposition(proposition_id);
-        if (feedbacks === null) {
-            res.sendStatus(500);
-            return;
-        }
-
-        res.status(200).json(feedbacks);
-
-    } catch (err) {
-        console.error(err);
-        console.error(err.stack);
-        res.sendStatus(500);
-    }
-
-});
-
 router.get('/bad_formalizations', async (req, res) => {
     try {
         const exercises = await getBadExercises();
@@ -212,6 +182,7 @@ router.get('/bad_formalizations', async (req, res) => {
     }
 
 });
+
 router.get('/bad_formalizations/:exercise_id', async (req, res) => {
     try {
         let {exercise_id} = req.params;
