@@ -18,7 +18,6 @@ router.post('/', authAdmin, async (req, res) => {
         }
 
         res.status(200).json(users);
-        console.log(res.rows[0]);
 
     } catch (err) {
         console.error(err);
@@ -39,7 +38,6 @@ router.get('/:user_name', async (req, res) => {
         }
 
         res.status(200).json(users);
-        console.log(res.rows[0]);
 
     } catch (err) {
         console.error(err);

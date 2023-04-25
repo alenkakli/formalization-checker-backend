@@ -85,7 +85,7 @@ const getExercisePreviews = async () => {
             `SELECT e.exercise_id, e.title, count(DISTINCT (s.user_id)) as attempted
              FROM (exercises as e INNER JOIN propositions as p ON e.exercise_id = p.exercise_id)
                       LEFT JOIN solutions as s ON s.proposition_id = p.proposition_id
-             GROUP BY e.exercise_id;`;
+             GROUP BY e.exercise_id`;
         const res = await client.query(queryText);
 
         await client.query('COMMIT')
@@ -214,17 +214,15 @@ const getBadExercises = async () => {
     try {
         await client.query('BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED')
         const queryText =
-            `SELECT DISTINCT p.exercise_id,
+            `SELECT DISTINCT e.exercise_id,
                              e.title,
                              count(DISTINCT (s.bad_formalization_id)) as bad_formalizations,
-                             count(DISTINCT (s.user_id))              as students
-             FROM bad_formalizations b
-                      JOIN propositions p ON b.proposition_id = p.proposition_id
-                      JOIN exercises e ON p.exercise_id = e.exercise_id
-                      JOIN solutions s ON b.bad_formalization_id = s.bad_formalization_id
-             WHERE s.is_correct = false
-             GROUP BY p.exercise_id, e.title
-             ORDER BY students desc`;
+                             count(DISTINCT (s.user_id)) as students
+             FROM exercises e
+                      INNER JOIN propositions p ON e.exercise_id = p.exercise_id
+                      LEFT JOIN bad_formalizations b ON b.proposition_id = p.proposition_id
+                      LEFT JOIN solutions s ON b.bad_formalization_id = s.bad_formalization_id
+             GROUP BY e.exercise_id, e.title`;
         const res = await client.query(queryText);
 
         await client.query('COMMIT')
@@ -303,10 +301,10 @@ const getBadFormalizationsToProposition = async (exercise_id, proposition_id) =>
         const formalizations = await _getBadFormalizationsToProposition(proposition_id, client);
 
         for (let i = 0; i < formalizations.length; i++) {
-            formalizations[i].students = await _getNumberOfStudentsToBadFormalization(formalizations[i].bad_formalization_id, client);
+            formalizations[i].students = await _getStudentsToBadFormalization(formalizations[i].bad_formalization_id, client);
         }
         formalizations.sort((a, b) => {
-            return b.students - a.students;
+            return b.students.length - a.students.length;
         })
 
         await client.query('COMMIT')
@@ -405,14 +403,15 @@ const _getAllSolutionsToBadFormalization = async (bad_formalization_id, exercise
     return uniqueRes;
 };
 
-const _getNumberOfStudentsToBadFormalization = async (bad_formalization_id, client) => {
+const _getStudentsToBadFormalization = async (bad_formalization_id, client) => {
     const queryText =
-        `SELECT count(DISTINCT (user_id))
+        `SELECT DISTINCT (user_name)
          FROM solutions
+         JOIN users u on solutions.user_id = u.github_id
          WHERE bad_formalization_id = $1`
 
     const res = await client.query(queryText, [bad_formalization_id]);
-    return res.rows[0].count;
+    return res.rows;
 };
 
 const saveExercise = async (
@@ -466,12 +465,13 @@ const _saveSolution = async (studentID, propositionID, formalizationID, badForma
     const queryText =
         `INSERT INTO solutions(user_id, proposition_id, formalization_id, bad_formalization_id, solution, is_correct,
                                date)
-         VALUES ($1, $2, $3, $4, $5, $6, NOW()::timestamp)`
+         VALUES ($1, $2, $3, $4, $5, $6, NOW()::timestamp) RETURNING solution_id`
 
-    await client.query(
+    const res = await client.query(
         queryText,
         [studentID, propositionID, formalizationID, badFormalizationID, studentSolution, correctSolution]
     );
+    return res.rows[0].solution_id;
 };
 
 const _saveBadFormalization = async (studentSolution, propositionID, client) => {
@@ -567,7 +567,9 @@ const evaluateResult = async (user, exercise_id, proposition_id, solution) => {
             bad_formalization_id,
             formalization_id
         } = await findEquivalentSolutions(proposition_id, exercise_id, solution, client, migration);
-        await _saveSolution(user_id, proposition_id, formalization_id, bad_formalization_id, solution, isCorrectSolution, client);
+        const solution_id = await _saveSolution(user_id, proposition_id, formalization_id, bad_formalization_id, solution, isCorrectSolution, client);
+        eval_status.bad_formalization_id = bad_formalization_id;
+        eval_status.solution_id = solution_id;
 
         await client.query('COMMIT');
         return eval_status;

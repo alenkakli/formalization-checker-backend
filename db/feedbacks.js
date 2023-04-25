@@ -1,15 +1,20 @@
 const pool = require('./db');
 
-const getFeedbacksToProposition = async (proposition_id) => {
+const getAllFeedbacks= async (bad_formalization_id) => {
     const client = await pool.connect();
     try {
         await client.query('BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED')
         const queryText =
-            `SELECT f.feedback_id, f.feedback 
+            `SELECT f.feedback_id, f.feedback, f.author, f.active, count(fs.id) as shown, 
+                count(fs.rating) filter ( where fs.rating > 0) as likes, 
+                count(fs.rating) filter ( where fs.rating < 0) as dislikes
              FROM feedbacks f
-             JOIN bad_formalizations as b ON b.bad_formalization_id = f.bad_formalization_id 
-             WHERE b.proposition_id = $1 and f.active = true`;
-        const res = await client.query(queryText, [ proposition_id ]);
+             LEFT JOIN feedback_to_solution fs on f.feedback_id = fs.feedback_id
+             WHERE f.bad_formalization_id = $1
+             GROUP BY f.feedback_id, f.feedback, f.author, f.active, f.created
+             ORDER BY f.created`
+
+        const res = await client.query(queryText, [ bad_formalization_id ]);
 
         await client.query('COMMIT')
         return res.rows;
@@ -22,13 +27,16 @@ const getFeedbacksToProposition = async (proposition_id) => {
     }
 };
 
-const getFeedbacksToBadFormalization = async (bad_formalization_id) => {
+const getActiveFeedbacks = async (bad_formalization_id) => {
     const client = await pool.connect();
     try {
         await client.query('BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED')
         const queryText =
-            `SELECT feedback_id, feedback, author, active FROM feedbacks f
-             WHERE bad_formalization_id = $1`
+            `SELECT f.feedback_id, f.feedback
+             FROM feedbacks f
+             WHERE f.bad_formalization_id = $1 and f.active = true
+             GROUP BY f.feedback_id, f.feedback
+             ORDER BY f.created`
 
         const res = await client.query(queryText, [ bad_formalization_id ]);
 
@@ -48,8 +56,8 @@ const saveFeedback = async (user, bad_formalization_id, feedback) => {
     try {
         await client.query('BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED')
         const queryText =
-            `INSERT INTO feedbacks(feedback, bad_formalization_id, author, active)
-             VALUES($1, $2, $3, true) RETURNING feedback_id;`
+            `INSERT INTO feedbacks(feedback, bad_formalization_id, author, active, created)
+             VALUES($1, $2, $3, true, now()) RETURNING feedback_id;`
 
         await client.query(queryText, [ feedback, bad_formalization_id, user]);
 
@@ -82,9 +90,52 @@ const updateFeedback = async (feedback_id, isActive) => {
     }
 };
 
+const saveFeedbackToSolution = async (feedback_id, solution_id) => {
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED')
+        const queryText =
+            `INSERT INTO feedback_to_solution(feedback_id, solution_id, rating, showed)
+             VALUES($1, $2, 0, now()) RETURNING id;`
+
+        const res = await client.query(queryText, [ feedback_id, solution_id ]);
+
+        await client.query('COMMIT')
+        return res.rows[0].id;
+
+    } catch (e) {
+        await client.query('ROLLBACK');
+        throw e
+    } finally {
+        client.release()
+    }
+};
+
+
+const updateFeedbackRating = async (id, rating) => {
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED')
+        const queryText =
+            `UPDATE feedback_to_solution SET rating = $2, rated = now() WHERE id = $1;`
+
+        await client.query(queryText, [ id, rating ]);
+
+        await client.query('COMMIT')
+
+    } catch (e) {
+        await client.query('ROLLBACK');
+        throw e
+    } finally {
+        client.release()
+    }
+};
+
 module.exports = {
-    getFeedbacksToProposition,
-    getFeedbacksToBadFormalization,
+    getAllFeedbacks,
+    getActiveFeedbacks,
     saveFeedback,
-    updateFeedback
+    updateFeedback,
+    saveFeedbackToSolution,
+    updateFeedbackRating
 };

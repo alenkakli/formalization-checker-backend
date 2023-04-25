@@ -8,9 +8,6 @@ const {
     saveExercise, updateExercise, removeExercise,
     evaluateResult, UserException, ExerciseException
 } = require('../../db/exercises');
-const {
-    getFeedbacksToProposition
-} = require('../../db/feedbacks');
 const {authAdmin} = require('../../helpers/auth');
 
 router.post('/', authAdmin, async (req, res) => {
@@ -68,6 +65,7 @@ router.post('/edit', authAdmin, async (req, res) => {
 
 });
 
+// FIXME: Should be router.delete('/:exercise_id', ...
 router.delete('/remove', authAdmin, async (req, res) => {
     try {
         const exercise = req.body;
@@ -162,33 +160,6 @@ router.post('/:exercise_id/:proposition_id', async (req, res) => {
         if (err instanceof ExerciseException) {
             res.sendStatus(404);
         }
-        console.error(err);
-        console.error(err.stack);
-        res.sendStatus(500);
-    }
-
-});
-
-// todo, presunut do api/feedback
-router.get('/feedback/:proposition_id', async (req, res) => {
-    try {
-        let {proposition_id} = req.params;
-        proposition_id = parseInt(proposition_id, 10);
-        if (isNaN(proposition_id)) {
-            console.error('URL parameters are not numbers.');
-            res.sendStatus(400);
-            return;
-        }
-
-        const feedbacks = await getFeedbacksToProposition(proposition_id);
-        if (feedbacks === null) {
-            res.sendStatus(500);
-            return;
-        }
-
-        res.status(200).json(feedbacks);
-
-    } catch (err) {
         console.error(err);
         console.error(err.stack);
         res.sendStatus(500);
