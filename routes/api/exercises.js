@@ -65,6 +65,7 @@ router.post('/edit', authAdmin, async (req, res) => {
 
 });
 
+// FIXME: Should be router.delete('/:exercise_id', ...
 router.delete('/remove', authAdmin, async (req, res) => {
     try {
         const exercise = req.body;

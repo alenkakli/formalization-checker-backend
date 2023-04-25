@@ -34,9 +34,11 @@ router.get('/:exercise_id', async (req, res) => {
             return;
         }
 
-        let exercise = JSON;
-        exercise.title = await getExerciseTitle(exercise_id)
-        exercise.users = await getUsersByExerciseId(exercise_id);
+        // FIXME: Make this transactional
+        const exercise = {
+            title: await getExerciseTitle(exercise_id),
+            users: await getUsersByExerciseId(exercise_id)
+        };
 
         res.status(200).json(exercise);
 
@@ -62,9 +64,11 @@ router.get('/:exercise_id/:user_name', async (req, res) => {
             return;
         }
 
-        let exercise = JSON;
-        exercise.title = await getExerciseTitle(exercise_id)
-        exercise.solutions = await getUserSolutions(user_name, exercise_id);
+        // FIXME: Make this transactional
+        const exercise = {
+            title: await getExerciseTitle(exercise_id),
+            solutions: await getUserSolutions(user_name, exercise_id)
+        };
 
         res.status(200).json(exercise);
 
