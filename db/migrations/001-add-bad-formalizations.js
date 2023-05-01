@@ -11,6 +11,8 @@ main();
 
 async function evaluateOldResults() {
     const client = await pool.connect();
+    const timer = 'processing solutions';
+    console.time(timer);
     try {
         await client.query('BEGIN TRANSACTION ISOLATION LEVEL SERIALIZABLE');
         const solutions = await _getAllSolutions(client);
@@ -19,7 +21,10 @@ async function evaluateOldResults() {
             return;
         }
 
+        console.log('Building equivalence classes of incorrect solutions');
         const len = solutions.length;
+        const five_percent = Math.ceil(len / 20);
+        console.log(`${len} solutions to process`);
         for (let i = 0; i < len; i++) {
             const solution = solutions[i];
             const solution_id = solution.solution_id;
@@ -31,15 +36,22 @@ async function evaluateOldResults() {
             const {bad_formalization_id, formalization_id} = await findEquivalentSolutions(proposition_id, exercise_id, solution.solution, client, migration);
 
             await _updateSolution(solution_id, formalization_id, bad_formalization_id, client);
+
+            if (i > 0 && i % five_percent == 0) {
+                console.timeLog(timer, `${Math.ceil(100 * i / len)} %`)
+            }
         }
+        console.timeLog(timer, 'Commiting...');
 
         await client.query('COMMIT');
+        console.timeLog(timer, 'Done');
 
     } catch (e) {
         await client.query('ROLLBACK');
         throw e;
     } finally {
         client.release()
+        console.timeEnd(timer);
     }
 }
 
