@@ -405,7 +405,7 @@ const _getAllSolutionsToBadFormalization = async (bad_formalization_id, exercise
 
 const _getStudentsToBadFormalization = async (bad_formalization_id, client) => {
     const queryText =
-        `SELECT DISTINCT (user_name)
+        `SELECT DISTINCT ON (user_name) user_name, solution_id
          FROM solutions
          JOIN users u on solutions.user_id = u.github_id
          WHERE bad_formalization_id = $1`
