@@ -408,7 +408,8 @@ const _getStudentsToBadFormalization = async (bad_formalization_id, client) => {
         `SELECT DISTINCT ON (user_name) user_name, solution_id
          FROM solutions
          JOIN users u on solutions.user_id = u.github_id
-         WHERE bad_formalization_id = $1`
+         WHERE bad_formalization_id = $1
+         ORDER BY user_name, date DESC`
 
     const res = await client.query(queryText, [bad_formalization_id]);
     return res.rows;
