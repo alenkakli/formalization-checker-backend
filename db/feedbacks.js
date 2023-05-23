@@ -131,11 +131,108 @@ const updateFeedbackRating = async (id, rating) => {
     }
 };
 
+const getFeedbackRating = async (solution_id, feedback_id) => {
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED')
+        const queryText =
+            `SELECT rating
+             FROM feedback_to_solution fs
+             WHERE fs.solution_id = $1 and fs.feedback_id = $2`
+
+        const res = await client.query(queryText, [ solution_id, feedback_id ]);
+
+        await client.query('COMMIT')
+        return res.rows[0].rating;
+
+    } catch (e) {
+        await client.query('ROLLBACK');
+        throw e
+    } finally {
+        client.release()
+    }
+};
+const getUsersToFeedbackLikes = async (feedback_id) => {
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED')
+        const queryText =
+            `SELECT DISTINCT (u.user_name)
+             FROM feedback_to_solution fs
+             JOIN solutions s on fs.solution_id = s.solution_id
+             JOIN users u on s.user_id = u.github_id
+             WHERE fs.feedback_id = $1 and fs.rating = 1`
+
+        const res = await client.query(queryText, [ feedback_id ]);
+
+        await client.query('COMMIT')
+        return res.rows;
+
+    } catch (e) {
+        await client.query('ROLLBACK');
+        throw e
+    } finally {
+        client.release()
+    }
+};
+
+const getUsersToFeedbackDislikes = async (feedback_id) => {
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED')
+        const queryText =
+            `SELECT DISTINCT (u.user_name)
+             FROM feedback_to_solution fs
+             JOIN solutions s on fs.solution_id = s.solution_id
+             JOIN users u on s.user_id = u.github_id
+             WHERE fs.feedback_id = $1 and fs.rating = -1`
+
+        const res = await client.query(queryText, [ feedback_id ]);
+
+        await client.query('COMMIT')
+        return res.rows;
+
+    } catch (e) {
+        await client.query('ROLLBACK');
+        throw e
+    } finally {
+        client.release()
+    }
+};
+
+const getUsersToFeedback = async (feedback_id) => {
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED')
+        const queryText =
+            `SELECT DISTINCT (u.user_name)
+             FROM feedback_to_solution fs
+             JOIN solutions s on fs.solution_id = s.solution_id
+             JOIN users u on s.user_id = u.github_id
+             WHERE fs.feedback_id = $1`
+
+        const res = await client.query(queryText, [ feedback_id ]);
+
+        await client.query('COMMIT')
+        return res.rows;
+
+    } catch (e) {
+        await client.query('ROLLBACK');
+        throw e
+    } finally {
+        client.release()
+    }
+};
+
 module.exports = {
     getAllFeedbacks,
     getActiveFeedbacks,
     saveFeedback,
     updateFeedback,
     saveFeedbackToSolution,
-    updateFeedbackRating
+    updateFeedbackRating,
+    getFeedbackRating,
+    getUsersToFeedbackLikes,
+    getUsersToFeedbackDislikes,
+    getUsersToFeedback
 };
