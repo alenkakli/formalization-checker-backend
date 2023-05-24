@@ -161,7 +161,7 @@ const getUsersToFeedbackLikes = async (feedback_id) => {
              FROM feedback_to_solution fs
              JOIN solutions s on fs.solution_id = s.solution_id
              JOIN users u on s.user_id = u.github_id
-             WHERE fs.feedback_id = $1 and fs.rating = 1`
+             WHERE fs.feedback_id = $1 and fs.rating = 1 and u.is_admin = false`
 
         const res = await client.query(queryText, [ feedback_id ]);
 
@@ -185,7 +185,7 @@ const getUsersToFeedbackDislikes = async (feedback_id) => {
              FROM feedback_to_solution fs
              JOIN solutions s on fs.solution_id = s.solution_id
              JOIN users u on s.user_id = u.github_id
-             WHERE fs.feedback_id = $1 and fs.rating = -1`
+             WHERE fs.feedback_id = $1 and fs.rating = -1 and u.is_admin = false`
 
         const res = await client.query(queryText, [ feedback_id ]);
 
@@ -209,7 +209,7 @@ const getUsersToFeedback = async (feedback_id) => {
              FROM feedback_to_solution fs
              JOIN solutions s on fs.solution_id = s.solution_id
              JOIN users u on s.user_id = u.github_id
-             WHERE fs.feedback_id = $1`
+             WHERE fs.feedback_id = $1 and u.is_admin = false`
 
         const res = await client.query(queryText, [ feedback_id ]);
 
