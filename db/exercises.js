@@ -82,9 +82,11 @@ const getExercisePreviews = async () => {
     try {
         await client.query('BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED')
         const queryText =
-            `SELECT e.exercise_id, e.title, count(DISTINCT (s.user_id)) as attempted
-             FROM (exercises as e INNER JOIN propositions as p ON e.exercise_id = p.exercise_id)
-                      LEFT JOIN solutions as s ON s.proposition_id = p.proposition_id
+            `SELECT e.exercise_id, e.title, count(DISTINCT (s.user_id)) filter (where u.is_admin = false) as attempted
+             FROM (exercises as e 
+                 INNER JOIN propositions as p ON e.exercise_id = p.exercise_id)
+             LEFT JOIN solutions as s ON s.proposition_id = p.proposition_id
+             LEFT JOIN users u on s.user_id = u.github_id
              GROUP BY e.exercise_id`;
         const res = await client.query(queryText);
 
@@ -217,11 +219,12 @@ const getBadExercises = async () => {
             `SELECT DISTINCT e.exercise_id,
                              e.title,
                              count(DISTINCT (s.bad_formalization_id)) as bad_formalizations,
-                             count(DISTINCT (s.user_id)) as students
+                             count(DISTINCT (s.user_id)) filter (where u.is_admin = false) as students
              FROM exercises e
                       INNER JOIN propositions p ON e.exercise_id = p.exercise_id
                       LEFT JOIN bad_formalizations b ON b.proposition_id = p.proposition_id
                       LEFT JOIN solutions s ON b.bad_formalization_id = s.bad_formalization_id
+                      LEFT JOIN users u on s.user_id = u.github_id
              GROUP BY e.exercise_id, e.title`;
         const res = await client.query(queryText);
 
@@ -285,10 +288,10 @@ const _getNumberOfBadFormalizationsToProposition = async (proposition_id, client
 
 const _getNumberOfStudentsToProposition = async (proposition_id, client) => {
     const queryText =
-        `SELECT count(DISTINCT (user_id))
-         FROM solutions
-         WHERE proposition_id = $1
-           and is_correct = false`
+        `SELECT count(DISTINCT (user_id)) 
+         FROM solutions s
+         JOIN users u on s.user_id = u.github_id
+         WHERE s.proposition_id = $1 and s.is_correct = false and u.is_admin = false`
 
     const res = await client.query(queryText, [proposition_id]);
     return res.rows[0].count;
@@ -408,7 +411,7 @@ const _getStudentsToBadFormalization = async (bad_formalization_id, client) => {
         `SELECT DISTINCT (user_name)
          FROM solutions
          JOIN users u on solutions.user_id = u.github_id
-         WHERE bad_formalization_id = $1`
+         WHERE bad_formalization_id = $1 and u.is_admin = false`
 
     const res = await client.query(queryText, [bad_formalization_id]);
     return res.rows;
