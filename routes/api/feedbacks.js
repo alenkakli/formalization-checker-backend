@@ -1,6 +1,7 @@
 const express = require('express');
 const {saveFeedback, updateFeedback, saveFeedbackToSolution, updateFeedbackRating,
-    getAllFeedbacks, getActiveFeedbacks
+    getAllFeedbacks, getActiveFeedbacks, getFeedbackRating, getUsersToFeedbackLikes, getUsersToFeedbackDislikes,
+    getUsersToFeedback
 } = require("../../db/feedbacks");
 const {authAdmin} = require("../../helpers/auth");
 const router = express.Router();
@@ -53,10 +54,13 @@ router.get('/all/bad_formalization/:bad_formalization_id', async (req, res) => {
         }
 
         const feedbacks = await getAllFeedbacks(bad_formalization_id);
-        // if (feedbacks === null) {
-        //     res.sendStatus(500);
-        //     return;
-        // }
+        if (feedbacks && feedbacks.length >= 1) {
+            for (let i=0; i < feedbacks.length; i++) {
+                feedbacks[i].likes_users = await getUsersToFeedbackLikes(feedbacks[i].feedback_id);
+                feedbacks[i].dislikes_users = await getUsersToFeedbackDislikes(feedbacks[i].feedback_id);
+                feedbacks[i].shown_users = await getUsersToFeedback(feedbacks[i].feedback_id);
+            }
+        }
 
         res.status(200).json(feedbacks);
 
@@ -124,4 +128,29 @@ router.patch('/rating/:id', async (req, res) => {
 
 });
 
+
+router.get('/rating/:solution_id/:feedback_id', async (req, res) => {
+    try {
+        let {solution_id, feedback_id} = req.params;
+        solution_id = parseInt(solution_id, 10);
+        feedback_id = parseInt(feedback_id, 10);
+
+        if (isNaN(solution_id) || isNaN(feedback_id)) {
+            console.error('URL parameters are not numbers.');
+            res.sendStatus(400);
+            return;
+        }
+
+        const rating = await getFeedbackRating(solution_id, feedback_id);
+
+
+        res.status(200).json(rating);
+
+    } catch (err) {
+        console.error(err);
+        console.error(err.stack);
+        res.sendStatus(500);
+    }
+
+});
 module.exports = router;

@@ -5,11 +5,12 @@ const getUsersByExerciseId = async (exercise_id) => {
     try {
         await client.query('BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED')
         const queryText =
-            `SELECT user_name, solved, attempted, successful_attempts, attempts, last_attempt_date, 
+            `SELECT user_name, is_admin, solved, attempted, successful_attempts, attempts, last_attempt_date, 
                     exercise_id, a.is_correct as last_attempt_correct, a.solution_id as last_attempt
             FROM (
                 SELECT 
                     DISTINCT u.user_name as user_name,
+                    u.is_admin,
                     COUNT(DISTINCT (p.proposition_id)) filter (where s.is_correct = TRUE) as solved, 
                     COUNT(DISTINCT (p.proposition_id)) as attempted,
                     COUNT(s.is_correct) filter (where s.is_correct = TRUE) as successful_attempts, 
@@ -20,7 +21,7 @@ const getUsersByExerciseId = async (exercise_id) => {
                     INNER JOIN users as u ON s.user_id = u.github_id
                     INNER JOIN propositions as p ON s.proposition_id = p.proposition_id
                 WHERE p.exercise_id = $1
-                GROUP BY u.user_name, p.exercise_id) as t1
+                GROUP BY u.user_name, u.is_admin, p.exercise_id) as t1
 
             INNER JOIN solutions as a ON last_attempt_date = a.date
             ORDER BY last_attempt_date DESC`;
