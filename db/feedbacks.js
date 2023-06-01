@@ -5,11 +5,14 @@ const getAllFeedbacks= async (bad_formalization_id) => {
     try {
         await client.query('BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED')
         const queryText =
-            `SELECT f.feedback_id, f.feedback, f.author, f.active, count(fs.id) as shown, 
-                count(fs.rating) filter ( where fs.rating > 0) as likes, 
-                count(fs.rating) filter ( where fs.rating < 0) as dislikes
+            `SELECT f.feedback_id, f.feedback, f.author, f.active,
+                count(fs.id) filter (where u.is_admin = false) as shown,
+                count(fs.rating) filter (where u.is_admin = false and fs.rating > 0) as likes,
+                count(fs.rating) filter (where u.is_admin = false and fs.rating < 0) as dislikes
              FROM feedbacks f
              LEFT JOIN feedback_to_solution fs on f.feedback_id = fs.feedback_id
+             JOIN solutions s on fs.solution_id = s.solution_id
+             JOIN users u on u.github_id = s.user_id
              WHERE f.bad_formalization_id = $1
              GROUP BY f.feedback_id, f.feedback, f.author, f.active, f.created
              ORDER BY f.created`
