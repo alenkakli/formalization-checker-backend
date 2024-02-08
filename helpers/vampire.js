@@ -1,7 +1,7 @@
 const util = require('util');
 const fs = require('fs')
 const { PATH_TO_VAMPIRE } = require('../config');
-const  {getStructure}  = require('./parse');
+const { getStructure } = require('./parse');
 const { execFile } = require('child_process');
 
 const execFileWithInput = (file, args, input, callback) =>
@@ -57,7 +57,7 @@ async function evalWithVampire(
   async function vampire(formalization1, formalization2, timeLimit) {
     try{
         let processInput = toVampireInput(formalization1, "", "", formalization2);
-        let { stdout, stderr} = await execFileWithInput(`${PATH_TO_VAMPIRE}`, [ '-t', timeLimit ], processInput, '', '' );
+        let { stdout, stderr } = await execFileWithInput(`${PATH_TO_VAMPIRE}`, [ '-t', timeLimit ], processInput, '', '' );
         let result = checkVampireResult(stdout);
         if (result === 500) {
             return setStatus(result);
@@ -78,7 +78,8 @@ async function evalWithVampire(
   async function vampireStructure(formalization1, formalization2, constraintToExer, constraintToProp, timeLimit, language, exercise) {
       let processInput = toVampireInput(formalization1, constraintToExer, constraintToProp, formalization2);
       try{
-          let {stdout, stderr} = await execFileWithInput(`${PATH_TO_VAMPIRE}`, [ '-t', timeLimit, '-sa', 'fmb' ], processInput);
+          let { stdout, stderr } = await execFileWithInput(`${PATH_TO_VAMPIRE}`,
+              [ '-t', timeLimit, '-sa', 'fmb', '-updr', 'off' ], processInput);
 
           let result = checkVampireResult(stdout);
           if (result === 500) {
