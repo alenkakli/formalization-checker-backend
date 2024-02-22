@@ -154,11 +154,14 @@ router.post('/:exercise_id/:proposition_id', async (req, res) => {
 
     } catch (err) {
         if (err instanceof UserException) {
-            console.error('Missing log in user');
-            res.sendStatus(404);
+            console.error(err.message);
+            res.status(401).json(err);
+            return;
         }
         if (err instanceof ExerciseException) {
-            res.sendStatus(404);
+            console.error(err.message);
+            res.status(404).json(err);
+            return;
         }
         console.error(err);
         console.error(err.stack);
