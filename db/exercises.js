@@ -9,7 +9,8 @@ function UserException(message) {
     this.name = 'UserException';
 }
 
-function ExerciseException() {
+function ExerciseException(message) {
+    this.message = message;
     this.name = 'ExerciseException';
 }
 
@@ -561,7 +562,7 @@ const evaluateResult = async (user, exercise_id, proposition_id, solution) => {
         user_id = user_id[0].github_id;
 
         if (isNaN(parseInt(user_id))) {
-            throw new UserException("Missing log in user");
+            throw new UserException(`User "${user}" not found in the database`);
         }
 
         const migration = false;
@@ -588,10 +589,13 @@ const evaluateResult = async (user, exercise_id, proposition_id, solution) => {
 
 const findEquivalentSolutions = async (proposition_id, exercise_id, solution, client, migration) => {
     const formalizations = await _getAllFormalizationsToProposition(proposition_id, client);
-    let exercise = await _getExerciseByID(exercise_id, null, client);
+    const exercise = await _getExerciseByID(exercise_id, null, client);
 
-    if (!formalizations || !exercise || formalizations.length === 0) {
-        throw new ExerciseException();
+    if (!exercise) {
+        throw new ExerciseException(`Exercise ${exercise_id} does not exist.`);
+    }
+    if (!formalizations || formalizations.length === 0) {
+        throw new ExerciseException(`Proposition ${proposition_id} in exercise ${exercise_id} does not exist or has no formalizations.`);
     }
 
     const eval_status = await evaluate(solution, formalizations, exercise, migration);
