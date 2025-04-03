@@ -2,7 +2,8 @@ const {
   parseConstants,
   parsePredicates,
   parseFunctions,
-  parseFormulaWithPrecedence
+  parseFormulaWithPrecedence,
+  parseFormulaStrict
 } = require("@fmfi-uk-1-ain-412/js-fol-parser");
 
 const getLanguage = (exercise) => {
@@ -10,6 +11,7 @@ const getLanguage = (exercise) => {
   predicates = parsePredicates(exercise.predicates);
   functions = parseFunctions(exercise.functions);
   constraint = exercise.constraints;
+  parserType = exercise.parserType;
   if (containsDuplicates(constants)
       || containsDuplicates(predicates.map(x => x.name))
       || containsDuplicates(functions.map(x => x.name))) {
@@ -24,9 +26,9 @@ const getLanguage = (exercise) => {
     throw new Error("Language contains clashes between symbols.");
   }
 
-  return { constants, predicates, functions, constraint };
+  return { constants, predicates, functions, constraint, parserType };
 }
-
+ 
 const checkExercise = (exercise) => {
   if (!('title' in exercise) || !('description' in exercise)
       || !('constants' in exercise) || !('predicates' in exercise)
@@ -69,7 +71,7 @@ const checkProposition = (propositionObj, language) => {
 
 const checkFormalization = (
   formalization,
-  { constants, predicates, functions }
+  { constants, predicates, functions, parserType }
 ) => {
   let factories = {
     variable: () => null,
@@ -91,10 +93,9 @@ const checkFormalization = (
     existentialQuant: () => null,
     universalQuant: () => null
   };
-
   try {
     parseFormalization(
-      formalization, constants, predicates, functions, factories
+      formalization, constants, predicates, functions, factories, parserType
     );
   } catch (err) {
     console.error(err.message);
@@ -157,7 +158,7 @@ function checkArity(symbol, args, arityMap, {expected}) {
 }
 
 function parseFormalization(input, constants, predicates,
-                            functions, factories) {
+                            functions, factories, parserType) {
   const nonLogicalSymbols = new Set([
     ...constants,
     ...predicates.keys(),
@@ -171,7 +172,9 @@ function parseFormalization(input, constants, predicates,
     isVariable: (x) => !nonLogicalSymbols.has(x)
   };
 
-  return parseFormulaWithPrecedence(input, language, factories);
+  return parserType === 'withPrecedence'
+  ? parseFormulaWithPrecedence(input, language, factories)
+  : parseFormulaStrict(input, language, factories);
 }
 
 module.exports = {

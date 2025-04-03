@@ -57,8 +57,14 @@ class LanguageToVampire {
   formulaToVampire(exercise) {
     const {constants, predicates, functions} = getLanguage(exercise);
     const factories = this.getFactoriesForLanguage();
-    return ((formula) => parseFormalization(formula, constants, predicates, functions, factories).toVampire());
+    return ((formula) => parseFormalization(formula, constants, predicates, functions, factories, exercise.parserType).toVampire());
   }
+
+  formulaToParsed(exercise) {
+    const { constants, predicates, functions } = getLanguage(exercise);
+    const factories = this.getFactoriesForLanguage();
+    return (formula) => parseFormalization(formula, constants, predicates, functions, factories, exercise.parserType);
+}
 
   getFactoriesForLanguage() {
     return {
@@ -95,6 +101,25 @@ class LanguageToVampire {
     };
   }
 
+  variableToHuman(vampireSymbol) {
+    return this.toHuman(vampireSymbol, this.variablesToOriginal);
+  }
+
+  constantToHuman(vampireSymbol) {
+    return this.toHuman(vampireSymbol, this.constantsToOriginal);
+  }
+
+  predicateToHuman(vampireSymbol) {
+    return this.toHuman(vampireSymbol, this.predicatesToOriginal);
+  }
+
+  functionToHuman(vampireSymbol) {
+    return this.toHuman(vampireSymbol, this.functionsToOriginal);
+  }
+
+  formulaToHuman(vampireFormula) {
+    return vampireFormula.toHuman(this);
+  }
 
   // only a private function, do not use anywhere else
   toVampire(symbol, prefix, mapToVampire, mapToOriginal) {
@@ -105,6 +130,13 @@ class LanguageToVampire {
     mapToVampire.set(symbol, newSymbol);
     mapToOriginal.set(newSymbol, symbol);
     return newSymbol;
+  }
+
+  toHuman(vampireSymbol, mapToOriginal) {
+    if (!mapToOriginal.has(vampireSymbol)) {
+      throw new Error(`Unknown Vampire symbol: ${vampireSymbol}`);
+    }
+    return mapToOriginal.get(vampireSymbol);
   }
 }
 

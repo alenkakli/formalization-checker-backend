@@ -1,4 +1,4 @@
-const { parseTff } = require("@fmfi-uk-1-ain-412/js-fol-parser");
+const { parseTff, parseFormulaWithPrecedence } = require("@fmfi-uk-1-ain-412/js-fol-parser");
 var chance = require('chance').Chance();
 const {
     getLanguage
@@ -10,7 +10,7 @@ const {Variable, Constant, FunctionApplication, PredicateAtom,
 function getStructure(structure, language, exercise){
     structure = structure.split(".");
     let constants = {}
-    let symbols = {};
+    let symbols = { predicates: {}, functions: {} };
     let poc = 1;
 
     getLanguage(exercise).constants.forEach(key => { constants[key] = poc;
@@ -22,6 +22,7 @@ function getStructure(structure, language, exercise){
         if(structure[i] === "\n" ){
             continue;
         }
+        console.log(structure[i]);
         let parsed_formula = parseTff(structure[i] + ".", factories(language.constantsToOriginal, language.variablesToOriginal,
             language.functionsToOriginal, language.predicatesToOriginal ));
         if(parsed_formula.type === "type"){
@@ -38,7 +39,7 @@ function getStructure(structure, language, exercise){
             else{
                 let symbol = language.predicatesToOriginal.get(parsed_formula.name.substr(
                     parsed_formula.name.indexOf("_") + 1 ,parsed_formula.name.length ));
-                symbols[symbol] = [];
+                symbols.predicates[symbol] = [];
             }
 
         }
@@ -79,16 +80,16 @@ function getStructure(structure, language, exercise){
         }
     }
     getLanguage(exercise).predicates.forEach((key, value) => {
-        if(symbols[value] === undefined) {
-            symbols[value] = []
+        if(symbols.predicates[value] === undefined) {
+            symbols.predicates[value] = []
         }
     });
     getLanguage(exercise).functions.forEach((key, value) => {
-        if(symbols[value] === undefined) {
-            symbols[value] = []
+        if(symbols.functions[value] === undefined) {
+            symbols.functions[value] = []
         }
     });
-    for(let [key, value] of Object.entries(symbols)){
+    for(let [key, value] of Object.entries(symbols.functions)){
         if(getLanguage(exercise).functions.has(key)){
             poc = fillFunction(symbols, constants, key, poc).poc;
         }
@@ -96,7 +97,6 @@ function getStructure(structure, language, exercise){
     return {constants: constants, symbols: symbols, language:getLanguage(exercise)};
 
 }
-
 
 function parseFunction(parsed_formula, poc, symbols, constants, functionApplications){
     for(let i = 0; i < functionApplications.length; i++){
@@ -108,19 +108,19 @@ function parseFunction(parsed_formula, poc, symbols, constants, functionApplicat
             }
             for(let m = 0; m < args[j].length; m++ ){
                 poc = parseConstants(args[j][m], constants, poc).poc;
-                if(args[j][m].getOriginalSymbol() === undefined){
+                if(args[j][m].toHuman() === undefined){
                     constant.push(constants[args[j][m].toVampire()]);
                 }
                 else {
-                    constant.push(constants[args[j][m].getOriginalSymbol()]);
+                    constant.push(constants[args[j][m].toHuman()]);
                 }
             }
         }
-        if(symbols[functionApplications[i].getSymbol()] !== undefined){
-            symbols[functionApplications[i].getSymbol()].push( constant);
+        if(symbols[functionApplications[i].toHuman()] !== undefined){
+            symbols.functions[functionApplications[i].toHuman()].push( constant);
         }
         else{
-            symbols[functionApplications[i].getSymbol()] = [constant];
+            symbols.functions[functionApplications[i].toHuman()] = [constant];
         }
 
     }
@@ -134,18 +134,18 @@ function parsePredicate(parsed_formula, poc, symbols, constants){
         let constant = [];
         for(let j = 0; j < args.length; j++) {
             poc = parseConstants(args[j], constants, poc).poc;
-            if(args[j].getOriginalSymbol() === undefined){
+            if(args[j].toHuman() === undefined){
                 constant.push(constants[args[j].toVampire()]);
             }
             else {
-                constant.push(constants[args[j].getOriginalSymbol()]);
+                constant.push(constants[args[j].toHuman()]);
             }
         }
-        if(symbols[res[i].getSymbol()] !== undefined){
-            symbols[res[i].getSymbol()].push( constant);
+        if(symbols.predicates[res[i].toHuman()] !== undefined){
+            symbols.predicates[res[i].toHuman()].push( constant);
         }
         else{
-            symbols[res[i].getSymbol()] = [constant];
+            symbols.predicates[res[i].toHuman()] = [constant];
         }
     }
     return{symbols: symbols, constants: constants, poc: poc};
@@ -163,19 +163,19 @@ function parseUniQuant(parsed_formula, poc, predicates, constants){
 }
 
 function parseConstants(constant, constants, poc){
-    if(constant.getOriginalSymbol() === ''){
+    if(constant.toHuman() === ''){
         return { constants: constants, poc: poc};
     }
     for(const key in constants){
-        if(key === constant.getOriginalSymbol() || key === constant.toVampire()){
+        if(key === constant.toHuman() || key === constant.toVampire()){
             return { constants: constants, poc: poc};
         }
     }
-    if(constant.getOriginalSymbol() === undefined){
+    if(constant.toHuman() === undefined){
         constants[constant.toVampire()] = poc;
     }
     else {
-        constants[constant.getOriginalSymbol()] = poc;
+        constants[constant.toHuman()] = poc;
     }
     poc++;
     return{ constants: constants, poc: poc};
@@ -195,13 +195,13 @@ function parseEqualityAtom(constant1, constant2, constants, poc){
 
 function fillFunction(symbols, constants, fun, poc) {
     let was = []
-    for (let value of symbols[fun]) {
+    for (let value of symbols.functions[fun]) {
         was.push(value[0])
     }
     for (let key in constants) {
         if (!(was.includes(constants[key]))){
             was.push(constants[key]);
-            symbols[fun].push([constants[key], chance.integer({min: 1, max: poc - 1})]);
+            symbols.functions[fun].push([constants[key], chance.integer({min: 1, max: poc - 1})]);
         }
     }
     return {constants: constants, poc: poc, symbols: symbols};
