@@ -172,9 +172,9 @@ function parseFormalization(input, constants, predicates,
     isVariable: (x) => !nonLogicalSymbols.has(x)
   };
 
-  return parserType === 'withPrecedence'
-  ? parseFormulaWithPrecedence(input, language, factories)
-  : parseFormulaStrict(input, language, factories);
+  return parserType === 'strict'
+  ? parseFormulaStrict(input, language, factories)
+  : parseFormulaWithPrecedence(input, language, factories);
 }
 
 module.exports = {

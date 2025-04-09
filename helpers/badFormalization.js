@@ -1,5 +1,5 @@
 const {LanguageToVampire} = require('./language');
-const {checkImplication} = require('./vampire');
+const {checkEquivalence, statusIsEquivalent} = require('./vampire');
 
 module.exports = async function evaluateBadFormalization(
     solution, bad_formalizations, exercise
@@ -10,24 +10,12 @@ module.exports = async function evaluateBadFormalization(
 
     solution = formulaToVampire(solution);
 
-    //set eval status for possibility to return if some formalization is correct with solution
-    let bad_formalization;
-    let eval_status = {
-        languageDifferences: {},
-        formalizationToSolution: {},
-        solutionToFormalization: {} 
-    };
+    for (const bad_form of bad_formalizations) {
+        const tptp_bad_form = formulaToVampire(bad_form.bad_formalization);
 
-    for (let i = 0; i < bad_formalizations.length; i++) {
-        bad_formalization = formulaToVampire(bad_formalizations[i].bad_formalization);
-
-        eval_status.solutionToFormalization = await checkImplication(solution, bad_formalization, 10);
-        if (eval_status.solutionToFormalization.result !== "OK") {
-            continue;
-        }
-        eval_status.formalizationToSolution = await checkImplication(bad_formalization, solution, 10);
-        if (eval_status.formalizationToSolution.result === "OK" && eval_status.solutionToFormalization.result === "OK") {
-            return bad_formalizations[i].bad_formalization_id;
+        let eval_status = await checkEquivalence(solution, tptp_bad_form);
+        if (statusIsEquivalent(eval_status)) {
+            return bad_form.bad_formalization_id;
         }
     }
 

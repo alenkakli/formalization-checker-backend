@@ -1,4 +1,4 @@
-const { parseTff, parseFormulaWithPrecedence } = require("@fmfi-uk-1-ain-412/js-fol-parser");
+const { parseTff } = require("@fmfi-uk-1-ain-412/js-fol-parser");
 var chance = require('chance').Chance();
 const {
     getLanguage
@@ -22,7 +22,6 @@ function getStructure(structure, language, exercise){
         if(structure[i] === "\n" ){
             continue;
         }
-        console.log(structure[i]);
         let parsed_formula = parseTff(structure[i] + ".", factories(language.constantsToOriginal, language.variablesToOriginal,
             language.functionsToOriginal, language.predicatesToOriginal ));
         if(parsed_formula.type === "type"){

@@ -3,6 +3,7 @@ const {_getUserId} = require("./users");
 const evaluate = require('../helpers/evaluate');
 const evaluateBadFormalization = require('../helpers/badFormalization');
 const {LanguageToVampire} = require("../helpers/language");
+const {statusIsEquivalent} = require('../helpers/vampire');
 
 function UserException(message) {
     this.message = message;
@@ -599,8 +600,7 @@ const findEquivalentSolutions = async (proposition_id, exercise_id, solution, cl
     }
 
     const eval_status = await evaluate(solution, formalizations, exercise, migration);
-    const isCorrectSolution = (eval_status.solutionToFormalization.result === 'OK' &&
-        eval_status.formalizationToSolution.result === 'OK')
+    const isCorrectSolution = (statusIsEquivalent(eval_status));
 
     let bad_formalization_id = null;
     if (!isCorrectSolution) {
