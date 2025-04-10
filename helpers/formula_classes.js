@@ -17,7 +17,7 @@ class Variable {
     return this;
   }
 
-  evaluate(interpretation, valuation, domain) {
+  evaluate(structure, valuation) {
     const result = valuation[this.originalSymbol];
     return { kind: "variable", symbol: this.originalSymbol, result };
   }
@@ -41,8 +41,8 @@ class Constant {
     return [this];
   }
 
-  evaluate(interpretation, valuation, domain) {
-    const result = interpretation.languageConstants[this.originalSymbol];
+  evaluate(structure, valuation) {
+    const result = structure.iC[this.originalSymbol];
     return { kind: "constant", symbol: this.originalSymbol, result };
   }
 }
@@ -71,11 +71,11 @@ class FunctionApplication {
     return [this];
   }
 
-  evaluate(interpretation, valuation, domain) {
-    const evaluatedArgs = this.args.map(arg => arg.evaluate(interpretation, valuation, domain));
+  evaluate(structure, valuation) {
+    const evaluatedArgs = this.args.map(arg => arg.evaluate(structure, valuation));
 
     const evaluatedArgsResults = evaluatedArgs.map(arg => arg.result);
-    const functionTuples = interpretation.functions[this.originalSymbol];
+    const functionTuples = structure.iF[this.originalSymbol];
 
     let result = undefined;
     for (const tuple of functionTuples) {
@@ -118,11 +118,11 @@ class PredicateAtom {
     return [this];
   }
 
-  evaluate(interpretation, valuation, domain) {
-    const evaluateArgs = this.args.map(arg => arg.evaluate(interpretation, valuation, domain));
+  evaluate(structure, valuation) {
+    const evaluateArgs = this.args.map(arg => arg.evaluate(structure, valuation));
 
     const evaluatedArgsResults = evaluateArgs.map(arg => arg.result);
-    const predicateSet = interpretation.predicates[this.originalSymbol];
+    const predicateSet = structure.iP[this.originalSymbol];
     const result = predicateSet.some(tuple => JSON.stringify(tuple) === JSON.stringify(evaluatedArgsResults));
 
     return {
@@ -161,9 +161,9 @@ class EqualityAtom {
     return zoz;
   }
 
-  evaluate(interpretation, valuation, domain) {
-    const lhsEval = this.lhs.evaluate(interpretation, valuation, domain);
-    const rhsEval = this.rhs.evaluate(interpretation, valuation, domain);
+  evaluate(structure, valuation) {
+    const lhsEval = this.lhs.evaluate(structure, valuation);
+    const rhsEval = this.rhs.evaluate(structure, valuation);
     const result = lhsEval.result === rhsEval.result;
 
     return {
@@ -192,8 +192,8 @@ class Negation {
     return [];
   }
 
-  evaluate(interpretation, valuation, domain) {
-    const subEval = this.subf.evaluate(interpretation, valuation, domain);
+  evaluate(structure, valuation) {
+    const subEval = this.subf.evaluate(structure, valuation);
     const result = !subEval.result;
 
     return {
@@ -232,10 +232,10 @@ class Conjunction {
     return zoz;
   }
 
-  evaluate(interpretation, valuation, domain) {
-    const leftEval = this.lhs.evaluate(interpretation, valuation, domain);
+  evaluate(structure, valuation) {
+    const leftEval = this.lhs.evaluate(structure, valuation);
     if (leftEval.result) {
-      const rightEval = this.rhs.evaluate(interpretation, valuation, domain);
+      const rightEval = this.rhs.evaluate(structure, valuation);
       const result = rightEval.result;
 
       return {
@@ -283,10 +283,10 @@ class Disjunction {
     return zoz;
   }
 
-  evaluate(interpretation, valuation, domain) {
-    const leftEval = this.lhs.evaluate(interpretation, valuation, domain);
+  evaluate(structure, valuation) {
+    const leftEval = this.lhs.evaluate(structure, valuation);
     if (!leftEval.result) {
-      const rightEval = this.rhs.evaluate(interpretation, valuation, domain);
+      const rightEval = this.rhs.evaluate(structure, valuation);
       const result = rightEval.result;
 
       return {
@@ -321,10 +321,10 @@ class Implication {
     return `(${this.lhs.toHuman()} → ${this.rhs.toHuman()})`;
   }
 
-  evaluate(interpretation, valuation, domain) {
-    const leftEval = this.lhs.evaluate(interpretation, valuation, domain);
+  evaluate(structure, valuation) {
+    const leftEval = this.lhs.evaluate(structure, valuation);
     if (leftEval.result) {
-      const rightEval = this.rhs.evaluate(interpretation, valuation, domain);
+      const rightEval = this.rhs.evaluate(structure, valuation);
       const result = !leftEval.result || rightEval.result;
 
       return {
@@ -359,9 +359,9 @@ class Equivalence {
     return `(${this.lhs.toHuman()} ↔ ${this.rhs.toHuman()})`;
   }
 
-  evaluate(interpretation, valuation, domain) {
-    const leftEval = this.lhs.evaluate(interpretation, valuation, domain);
-    const rightEval = this.rhs.evaluate(interpretation, valuation, domain);
+  evaluate(structure, valuation) {
+    const leftEval = this.lhs.evaluate(structure, valuation);
+    const rightEval = this.rhs.evaluate(structure, valuation);
 
     const result = leftEval.result === rightEval.result; 
     return {
@@ -390,11 +390,11 @@ class ExistentialQuant {
     return `∃${this.originalSymbol} (${this.subf.toHuman()})`;
   }
 
-  evaluate(interpretation, valuation, domain) {
+  evaluate(structure, valuation) {
     let allResults = [];
-    for (let element of domain) {
+    for (let element of structure.domain) {
       const newValuation = { ...valuation, [this.originalSymbol]: element };
-      const subEval = this.subf.evaluate(interpretation, newValuation, domain);
+      const subEval = this.subf.evaluate(structure, newValuation);
       allResults.push(subEval);
       if (subEval.result) {
         return {
@@ -436,11 +436,11 @@ class UniversalQuant {
     return this.type;
   }
 
-  evaluate(interpretation, valuation, domain) {
+  evaluate(structure, valuation) {
     let allResults = [];
-    for (let element of domain) {
+    for (let element of structure.domain) {
       const newValuation = { ...valuation, [this.originalSymbol]: element };
-      const subEval = this.subf.evaluate(interpretation, newValuation, domain);
+      const subEval = this.subf.evaluate(structure, newValuation);
       allResults.push(subEval);
       if (!subEval.result) {
         return {

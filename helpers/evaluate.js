@@ -99,14 +99,7 @@ async function makeTrace(formalization, structure, exercise) {
   const formalizationParserFunction = formalizationLanguage.formulaToParsed(exercise);
   const parsedFormalization = formalizationParserFunction(formalization);
 
-  const domain = Object.values(structure.domain);
-  const interpretation = {
-    languageConstants: structure.domain,
-    predicates: structure.symbols.predicates,
-    functions: structure.symbols.functions
-  }
-
-  let evaluation = parsedFormalization.evaluate(interpretation, {}, domain);
+  let evaluation = parsedFormalization.evaluate(structure, {});
   return censorTrace(evaluation);
 }
 
@@ -203,12 +196,12 @@ function printDeep(obj, indent = 0) {
 //   languageDiff: {}
 //   formalizationToSolution: {
 //     result: '',
-//     structure: { domain: '', symbols: '', languageConstants: [] },
+//     structure: { domain: [], iC: {}, iP: {}, iF: {}, languageConstants: [] },
 //     trace: { true: {}, false: {} }
 //   },
 //   solutionToFormalization: {
 //     result: '',
-//     structure: { domain: '', symbols: '', languageConstants: [] },
+//     structure: { domain: [], iC: {}, iP: {}, iF: {}, languageConstants: [] },
 //     trace: { true: {}, false: {} }
 //   }
 // };

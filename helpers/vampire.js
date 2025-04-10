@@ -20,10 +20,12 @@ async function findStructure(
 ) {
     let vampireOutput = await callVampireConstraints(formalization, solution, constraintToExer, constraintToProp, timeLimit, language, exercise);
 
-    if (!vampireOutput.constants) return {error: 'Structure not found'};
+    if (!vampireOutput.iC) return {error: 'Structure not found'};
     const structure = {
-        domain: vampireOutput.constants,
-        symbols: vampireOutput.symbols || '',
+        domain: vampireOutput.domain,
+        iC: vampireOutput.iC,
+        iP: vampireOutput.iP,
+        iF: vampireOutput.iF,
         languageConstants: vampireOutput.language ? Array.from(vampireOutput.language.constants) : []
     };
 
@@ -84,7 +86,9 @@ async function vampireStructure(formalization1, formalization2, constraintToExer
             let structure = stdout.slice(stdout.indexOf("tff"), stdout.length);
             structure = structure.slice(0, structure.indexOf("% SZS"));
             structure = getStructure(structure, language, exercise);
-            return { status: setStatus(result), constants: structure.constants, symbols: structure.symbols, m: "𝓜 = (𝐷, 𝑖)", language: structure.language };
+            return { status: setStatus(result),
+                 domain: structure.domain, iC: structure.iC, iP: structure.iP, iF: structure.iF,
+                  m: "𝓜 = (𝐷, 𝑖)", language: structure.language };
         }
         return { status: setStatus(result), domain: "", predicates: "", m: "" };
     }
