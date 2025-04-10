@@ -18,12 +18,11 @@ const execFileWithInput = (file, args, input, callback) =>
 async function findStructure(
     solution, constraintToExer, constraintToProp, formalization, language, exercise, timeLimit = findStructureTimeout
 ) {
-    let notFound = ' sa nepodarilo nájsť automaticky. Ak neviete nájsť chybu, poraďte sa s vyučujúcimi.';
-
     let vampireOutput = await callVampireConstraints(formalization, solution, constraintToExer, constraintToProp, timeLimit, language, exercise);
 
+    if (!vampireOutput.constants) return {error: 'Structure not found'};
     const structure = {
-        domain: vampireOutput.constants || notFound,
+        domain: vampireOutput.constants,
         symbols: vampireOutput.symbols || '',
         languageConstants: vampireOutput.language ? Array.from(vampireOutput.language.constants) : []
     };

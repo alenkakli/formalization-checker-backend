@@ -13,7 +13,8 @@ function getStructure(structure, language, exercise){
     let symbols = { predicates: {}, functions: {} };
     let poc = 1;
 
-    getLanguage(exercise).constants.forEach(key => { constants[key] = poc;
+    const exerciseLanguage = getLanguage(exercise);
+    exerciseLanguage.constants.forEach(key => { constants[key] = poc;
                                                                 poc++;
                                                             });
 
@@ -78,22 +79,23 @@ function getStructure(structure, language, exercise){
             }
         }
     }
-    getLanguage(exercise).predicates.forEach((key, value) => {
+    exerciseLanguage.predicates.forEach((key, value) => {
         if(symbols.predicates[value] === undefined) {
             symbols.predicates[value] = []
         }
     });
-    getLanguage(exercise).functions.forEach((key, value) => {
+    exerciseLanguage.functions.forEach((key, value) => {
         if(symbols.functions[value] === undefined) {
             symbols.functions[value] = []
         }
     });
     for(let [key, value] of Object.entries(symbols.functions)){
-        if(getLanguage(exercise).functions.has(key)){
-            poc = fillFunction(symbols, constants, key, poc).poc;
+        if(exerciseLanguage.functions.has(key)){
+            const arity = exerciseLanguage.functions.get(key);
+            poc = fillFunction(symbols, constants, key, arity, poc).poc;
         }
     }
-    return {constants: constants, symbols: symbols, language:getLanguage(exercise)};
+    return {constants: constants, symbols: symbols, language:exerciseLanguage};
 
 }
 
@@ -115,8 +117,8 @@ function parseFunction(parsed_formula, poc, symbols, constants, functionApplicat
                 }
             }
         }
-        if(symbols[functionApplications[i].toHuman()] !== undefined){
-            symbols.functions[functionApplications[i].toHuman()].push( constant);
+        if(symbols.functions[functionApplications[i].toHuman()] !== undefined){
+            symbols.functions[functionApplications[i].toHuman()].push(constant);
         }
         else{
             symbols.functions[functionApplications[i].toHuman()] = [constant];
@@ -141,7 +143,7 @@ function parsePredicate(parsed_formula, poc, symbols, constants){
             }
         }
         if(symbols.predicates[res[i].toHuman()] !== undefined){
-            symbols.predicates[res[i].toHuman()].push( constant);
+            symbols.predicates[res[i].toHuman()].push(constant);
         }
         else{
             symbols.predicates[res[i].toHuman()] = [constant];
@@ -192,15 +194,26 @@ function parseEqualityAtom(constant1, constant2, constants, poc){
     return{ constants: constants, poc: poc};
 }
 
-function fillFunction(symbols, constants, fun, poc) {
-    let was = []
-    for (let value of symbols.functions[fun]) {
-        was.push(value[0])
+function fillFunction(symbols, constants, fun, arity, poc) {
+    let was = new Set(symbols.functions[fun].map(entry => JSON.stringify(entry.slice(0, -1))));
+
+    function generateTuples(arr, arity, prefix = []) {
+        if (arity === 0) return [prefix];
+        let result = [];
+        for (let i = 0; i < arr.length; i++) {
+            result = result.concat(generateTuples(arr, arity - 1, [...prefix, arr[i]]));
+        }
+        return result;
     }
-    for (let key in constants) {
-        if (!(was.includes(constants[key]))){
-            was.push(constants[key]);
-            symbols.functions[fun].push([constants[key], chance.integer({min: 1, max: poc - 1})]);
+
+    const constantValues = Object.values(constants);
+    const allPossibleTuples = generateTuples(constantValues, arity);
+
+    for (let tuple of allPossibleTuples) {
+        const key = JSON.stringify(tuple);
+        if (!was.has(key)) {
+            was.add(key);
+            symbols.functions[fun].push([...tuple, chance.integer({ min: 1, max: poc - 1 })]);
         }
     }
     return {constants: constants, poc: poc, symbols: symbols};

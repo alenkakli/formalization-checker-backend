@@ -107,7 +107,28 @@ async function makeTrace(formalization, structure, exercise) {
   }
 
   let evaluation = parsedFormalization.evaluate(interpretation, {}, domain);
-  return evaluation;
+  return censorTrace(evaluation);
+}
+
+function censorTrace(trace) {
+  const cleanTrace = { ...trace };
+
+  const quantKinds = ["universalQuant", "existentialQuant"];
+  const connectiveKinds = ["conjunction", "disjunction", "implication", "equivalence", "negation"];
+
+  if (quantKinds.includes(cleanTrace.kind)) {
+    cleanTrace.kind = "quant";
+    delete cleanTrace.symbol;
+  } else if (connectiveKinds.includes(cleanTrace.kind)) {
+    cleanTrace.kind = "connective";
+    delete cleanTrace.symbol;
+  }
+
+  if (Array.isArray(cleanTrace.args)) {
+    cleanTrace.args = cleanTrace.args.map(arg => censorTrace(arg));
+  }
+
+  return cleanTrace;
 }
 
 module.exports = async function evaluate(
@@ -141,17 +162,23 @@ module.exports = async function evaluate(
   if (!implicationStatusIsTrue(eval_status.formalizationToSolution)) {
     eval_status.formalizationToSolution.structure = await findStructure(studentSolutionTranslated, constraint, constraintFromProp,
       formalizationsOfMatchingLanguageTranslated[0], language, exercise);
-    eval_status.formalizationToSolution.trace = {};
-    eval_status.formalizationToSolution.trace.true = await makeTrace(studentSolution, eval_status.formalizationToSolution.structure, exercise);
-    eval_status.formalizationToSolution.trace.false = await makeTrace(formalizationsOfMatchingLanguage[0].formalization, eval_status.formalizationToSolution.structure, exercise);
+
+    if (!eval_status.formalizationToSolution.structure.error) {
+      eval_status.formalizationToSolution.trace = {};
+      eval_status.formalizationToSolution.trace.true = await makeTrace(studentSolution, eval_status.formalizationToSolution.structure, exercise);
+      eval_status.formalizationToSolution.trace.false = await makeTrace(formalizationsOfMatchingLanguage[0].formalization, eval_status.formalizationToSolution.structure, exercise);
+    }
   }
 
   if (!implicationStatusIsTrue(eval_status.solutionToFormalization)) {
     eval_status.solutionToFormalization.structure = await findStructure(formalizationsOfMatchingLanguageTranslated[0], constraint, constraintFromProp,
       studentSolutionTranslated, language, exercise);
-    eval_status.solutionToFormalization.trace = {};
-    eval_status.solutionToFormalization.trace.false = await makeTrace(studentSolution, eval_status.solutionToFormalization.structure, exercise);
-    eval_status.solutionToFormalization.trace.true = await makeTrace(formalizationsOfMatchingLanguage[0].formalization, eval_status.solutionToFormalization.structure, exercise);
+    
+    if (!eval_status.solutionToFormalization.structure.error) {
+      eval_status.solutionToFormalization.trace = {};
+      eval_status.solutionToFormalization.trace.false = await makeTrace(studentSolution, eval_status.solutionToFormalization.structure, exercise);
+      eval_status.solutionToFormalization.trace.true = await makeTrace(formalizationsOfMatchingLanguage[0].formalization, eval_status.solutionToFormalization.structure, exercise);
+    }
   }
 
   return eval_status;
