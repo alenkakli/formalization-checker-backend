@@ -124,6 +124,14 @@ function censorTrace(trace) {
   return cleanTrace;
 }
 
+function censorStructure(structure) {
+  structure.iC = Object.fromEntries(Object.entries(structure.iC).filter(([key]) => structure.languageConstants.has(key)));
+  delete structure.languageConstants;
+
+  structure.structureConstants = structure.structureConstants.map(item => item.includes("fmb") ? item.replace(/^fmb_\$i_/, "$") : item);
+  return structure;
+}
+
 module.exports = async function evaluate(
   studentSolution, formalizations, exercise, migration
 ) {
@@ -133,7 +141,7 @@ module.exports = async function evaluate(
   const formalizationsOfMatchingLanguage = formalizationsWithLanguageDiff.filter(f => languagesAreEqual(f.languageDiff));
 
   if (formalizationsOfMatchingLanguage.length === 0) {
-    const eval_status = { formalizationToSolution: { result: 'missingOrExtraSymbols' }, solutionToFormalization: { result: 'missingOrExtraSymbols' } };
+    const eval_status = { correctImpliesInput: { result: 'missingOrExtraSymbols' }, inputImpliesCorrect: { result: 'missingOrExtraSymbols' } };
     eval_status.languageDiff = formalizationsWithLanguageDiff[0].languageDiff;
     return eval_status;
   }
@@ -152,25 +160,29 @@ module.exports = async function evaluate(
 
   // call the first saved formalization of the same language in case student solution is not correct with any of the saved solutions
   let eval_status = allStatuses[0];
-  if (!implicationStatusIsTrue(eval_status.formalizationToSolution)) {
-    eval_status.formalizationToSolution.structure = await findStructure(studentSolutionTranslated, constraint, constraintFromProp,
+  if (!implicationStatusIsTrue(eval_status.correctImpliesInput)) {
+    let counterexample = await findStructure(studentSolutionTranslated, constraint, constraintFromProp,
       formalizationsOfMatchingLanguageTranslated[0], language, exercise);
 
-    if (!eval_status.formalizationToSolution.structure.error) {
-      eval_status.formalizationToSolution.trace = {};
-      eval_status.formalizationToSolution.trace.true = await makeTrace(studentSolution, eval_status.formalizationToSolution.structure, exercise);
-      eval_status.formalizationToSolution.trace.false = await makeTrace(formalizationsOfMatchingLanguage[0].formalization, eval_status.formalizationToSolution.structure, exercise);
+    if (!counterexample.error) {
+      eval_status.correctImpliesInput.traces = {};
+      eval_status.correctImpliesInput.traces.consequent = await makeTrace(studentSolution, counterexample, exercise);
+      eval_status.correctImpliesInput.traces.antecedent = await makeTrace(formalizationsOfMatchingLanguage[0].formalization, counterexample, exercise);
+    
+      eval_status.correctImpliesInput.counterexample = censorStructure(counterexample);
     }
   }
 
-  if (!implicationStatusIsTrue(eval_status.solutionToFormalization)) {
-    eval_status.solutionToFormalization.structure = await findStructure(formalizationsOfMatchingLanguageTranslated[0], constraint, constraintFromProp,
+  if (!implicationStatusIsTrue(eval_status.inputImpliesCorrect)) {
+    let counterexample = await findStructure(formalizationsOfMatchingLanguageTranslated[0], constraint, constraintFromProp,
       studentSolutionTranslated, language, exercise);
     
-    if (!eval_status.solutionToFormalization.structure.error) {
-      eval_status.solutionToFormalization.trace = {};
-      eval_status.solutionToFormalization.trace.false = await makeTrace(studentSolution, eval_status.solutionToFormalization.structure, exercise);
-      eval_status.solutionToFormalization.trace.true = await makeTrace(formalizationsOfMatchingLanguage[0].formalization, eval_status.solutionToFormalization.structure, exercise);
+    if (!counterexample.error) {
+      eval_status.inputImpliesCorrect.traces = {};
+      eval_status.inputImpliesCorrect.traces.antecedent = await makeTrace(studentSolution, counterexample, exercise);
+      eval_status.inputImpliesCorrect.traces.consequent = await makeTrace(formalizationsOfMatchingLanguage[0].formalization, counterexample, exercise);
+      
+      eval_status.inputImpliesCorrect.counterexample = censorStructure(counterexample);
     }
   }
 
@@ -194,14 +206,14 @@ function printDeep(obj, indent = 0) {
 
 // const eval_status = {
 //   languageDiff: {}
-//   formalizationToSolution: {
+//   correctImpliesInput: {
 //     result: '',
-//     structure: { domain: [], iC: {}, iP: {}, iF: {}, languageConstants: [] },
-//     trace: { true: {}, false: {} }
+//     counterexample: { domain: [], iC: {}, iP: {}, iF: {}, languageConstants: [] }  |  { error: '' },
+//     traces: { antecedent: {}, consequent: {} }
 //   },
-//   solutionToFormalization: {
+//   inputImpliesCorrect: {
 //     result: '',
-//     structure: { domain: [], iC: {}, iP: {}, iF: {}, languageConstants: [] },
-//     trace: { true: {}, false: {} }
+//     counterexample: { domain: [], iC: {}, iP: {}, iF: {}, languageConstants: [] }  |  { error: '' },
+//     traces: { antecedent: {}, consequent: {} }
 //   }
 // };

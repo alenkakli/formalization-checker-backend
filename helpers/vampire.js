@@ -20,13 +20,15 @@ async function findStructure(
 ) {
     let vampireOutput = await callVampireConstraints(formalization, solution, constraintToExer, constraintToProp, timeLimit, language, exercise);
 
-    if (!vampireOutput.iC) return {error: 'Structure not found'};
+    if (!vampireOutput.domain) return { error: vampireOutput.status };
+
     const structure = {
         domain: vampireOutput.domain,
         iC: vampireOutput.iC,
         iP: vampireOutput.iP,
         iF: vampireOutput.iF,
-        languageConstants: vampireOutput.language ? Array.from(vampireOutput.language.constants) : []
+        languageConstants: vampireOutput.language ? new Set(vampireOutput.language.constants) : new Set(),
+        structureConstants: Object.keys(vampireOutput.iC)
     };
 
     return structure;
@@ -58,15 +60,15 @@ const implicationStatusIsTrue = (implicationStatus) => (
 );
 
 const statusIsEquivalent = (eval_status) => (
-    implicationStatusIsTrue(eval_status.formalizationToSolution) &&
-    implicationStatusIsTrue(eval_status.solutionToFormalization)
+    implicationStatusIsTrue(eval_status.correctImpliesInput) &&
+    implicationStatusIsTrue(eval_status.inputImpliesCorrect)
 );
 
 const checkEquivalence = async (solution, formalization) => ({
-    solutionToFormalization: {
+    inputImpliesCorrect: {
         result: await checkImplication(solution, formalization)
     },
-    formalizationToSolution: {
+    correctImpliesInput: {
         result: await checkImplication(formalization, solution)
     }
 });
@@ -79,7 +81,7 @@ async function vampireStructure(formalization1, formalization2, constraintToExer
 
         let result = checkVampireResult(stdout);
         if (result === 500) {
-            return { status: setStatus(result), domain: "", predicates: "", m: "" };
+            return { status: setStatus(result) };
         }
         result = result[1];
         if (stdout.includes("Finite Model Found!")) {
@@ -87,27 +89,26 @@ async function vampireStructure(formalization1, formalization2, constraintToExer
             structure = structure.slice(0, structure.indexOf("% SZS"));
             structure = getStructure(structure, language, exercise);
             return { status: setStatus(result),
-                 domain: structure.domain, iC: structure.iC, iP: structure.iP, iF: structure.iF,
-                  m: "𝓜 = (𝐷, 𝑖)", language: structure.language };
+                 domain: structure.domain, iC: structure.iC, iP: structure.iP, iF: structure.iF, language: structure.language };
         }
-        return { status: setStatus(result), domain: "", predicates: "", m: "" };
+        return { status: setStatus(result) };
     }
     catch (err) {
         if (err.message.substr(0, 15) === "Command failed:" && err.code === 1) {
-            return { status: setStatus("Time"), domain: "", predicates: "", m: "" };
+            return { status: setStatus("Time") };
         }
         console.error(`Unknown evaluation result: ${err}\n${err.stack}`);
-        return { status: setStatus(`failed`), domain: "", predicates: "", m: "" };
+        return { status: setStatus(`failed`) };
     }
 }
 
 async function callVampireConstraints(formalization1, formalization2, constraintToExer, constraintToProp, timeLimit, language, exercise) {
     let vampireOutput = await vampireStructure(formalization1, formalization2, constraintToExer, constraintToProp, timeLimit, language, exercise);
-    if (vampireOutput.m === "") {
+    if (!vampireOutput.domain) {
         vampireOutput = await vampireStructure(formalization1, formalization2, "", constraintToProp, timeLimit, language, exercise);
-        if (vampireOutput.m === "") {
+        if (!vampireOutput.domain) {
             vampireOutput = await vampireStructure(formalization1, formalization2, constraintToExer, "", timeLimit, language, exercise);
-            if (vampireOutput.m === "") {
+            if (!vampireOutput.domain) {
                 vampireOutput = await vampireStructure(formalization1, formalization2, "", "", timeLimit, language, exercise);
             }
         }
