@@ -10,6 +10,7 @@ const {Variable, Constant, FunctionApplication, PredicateAtom,
 function getStructure(structure, language, exercise){
     structure = structure.split(".");
 
+    let domain = {};
     let iC = {};
     let iP = {};
     let iF = {};
@@ -17,9 +18,6 @@ function getStructure(structure, language, exercise){
     let poc = 1;
 
     const exerciseLanguage = getLanguage(exercise);
-    exerciseLanguage.constants.forEach(key => { iC[key] = poc;
-                                                                poc++;
-                                                            });
 
 
     for(let i = 0; i < structure.length - 1; i++ ){
@@ -78,6 +76,8 @@ function getStructure(structure, language, exercise){
             if(parsed_formula.formula instanceof UniversalQuant){
                 if(parsed_formula.formula.type === "i"){
                     poc = parseUniQuant(parsed_formula, poc, iC).poc;
+                    domain = Object.values(iC);
+                    fillConstants(iC, exerciseLanguage.constants);
                 }
             }
         }
@@ -98,7 +98,7 @@ function getStructure(structure, language, exercise){
             poc = fillFunction(iF, iC, key, arity, poc).poc;
         }
     }
-    return {domain: Object.values(iC), iC: iC, iP: iP, iF: iF, language:exerciseLanguage};
+    return {domain: domain, iC: iC, iP: iP, iF: iF, language:exerciseLanguage};
 
 }
 
@@ -220,6 +220,17 @@ function fillFunction(iF, iC, fun, arity, poc) {
         }
     }
     return {iC: iC, poc: poc, iF: iF};
+}
+
+function fillConstants(iC, constants) {
+    let structureConstants = new Set(Object.keys(iC));
+    let domainSize = structureConstants.size;
+    constants.forEach(constant => {
+        if (!structureConstants.has(constant)) {
+            iC[constant] = chance.integer({ min: 1, max:  domainSize})
+        }
+    });
+    console.log(iC);
 }
 
 
